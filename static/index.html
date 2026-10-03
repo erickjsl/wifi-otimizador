@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wi-Fi Otimizador</title>
+<link rel="stylesheet" href="/style.css">
+<script>window.API_TOKEN = "__TOKEN__";</script>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg viewBox="0 0 24 24" width="28" height="28"><path fill="currentColor" d="M12 21l3.6-4.8a6 6 0 0 0-7.2 0L12 21zm0-18C7.95 3 4.21 4.34 1.2 6.6L3 9a15 15 0 0 1 18 0l1.8-2.4C19.79 4.34 16.05 3 12 3zm0 6c-2.7 0-5.19.89-7.2 2.4L6.6 13.8a9 9 0 0 1 10.8 0l1.8-2.4C17.19 9.89 14.7 9 12 9z"/></svg>
+    <span>Wi-Fi <b>Otimizador</b></span>
+  </div>
+  <nav>
+    <button data-tab="overview" class="active">Visão geral</button>
+    <button data-tab="channels">Redes &amp; canais</button>
+    <button data-tab="signal">Buscar sinal</button>
+    <button data-tab="tests">Testes</button>
+    <button data-tab="optimize">Otimizar</button>
+  </nav>
+  <button id="btnScan" class="primary">⟳ Analisar agora</button>
+</header>
+
+<main>
+  <div id="error" class="banner bad hidden"></div>
+
+  <!-- VISÃO GERAL -->
+  <section id="tab-overview" class="tab active">
+    <div class="grid g3">
+      <div class="card center">
+        <h3>Nota da sua rede</h3>
+        <div class="ring" id="scoreRing"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="bg"/><circle cx="60" cy="60" r="52" class="fg" id="scoreArc"/></svg><div class="ring-val"><span id="scoreVal">–</span><small>/100</small></div></div>
+        <div id="scoreParts" class="parts"></div>
+      </div>
+      <div class="card span2">
+        <h3>Conexão atual</h3>
+        <div id="connInfo" class="kv"><p class="muted">Clique em "Analisar agora".</p></div>
+      </div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Diagnóstico</h3>
+        <ul id="diagList" class="diag"></ul>
+      </div>
+      <div class="card">
+        <h3>Configuração ideal para o seu roteador</h3>
+        <p class="muted small">Calculada com base nas redes vizinhas detectadas agora. Aplique no painel do roteador:
+          <a id="routerLink" href="#" target="_blank" rel="noopener">abrir painel</a></p>
+        <div id="routerCfg"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REDES & CANAIS -->
+  <section id="tab-channels" class="tab">
+    <div class="card">
+      <div class="row between">
+        <h3>Mapa de espectro</h3>
+        <div class="seg" id="bandSel">
+          <button data-band="2.4" class="active">2,4 GHz</button>
+          <button data-band="5">5 GHz</button>
+          <button data-band="6">6 GHz</button>
+        </div>
+      </div>
+      <canvas id="specCanvas" height="300"></canvas>
+      <p class="muted small">Cada curva é uma rede. Sua rede aparece em <b class="c-mine">verde</b>. Quanto mais alta a curva, mais forte o sinal.</p>
+    </div>
+    <div class="card">
+      <h3>Qualidade de cada canal <span class="muted small">(100 = livre)</span></h3>
+      <canvas id="chanCanvas" height="180"></canvas>
+      <div id="chanRec" class="rec"></div>
+    </div>
+    <div class="card">
+      <h3>Redes encontradas <span id="apCount" class="pill"></span></h3>
+      <div class="table-wrap"><table id="apTable"><thead><tr>
+        <th data-k="ssid">Rede</th><th data-k="rssi">Sinal</th><th data-k="band">Banda</th><th data-k="channel">Canal</th>
+        <th data-k="width">Largura</th><th data-k="standard">Padrão</th><th data-k="security">Segurança</th><th data-k="bssid">BSSID</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- BUSCAR SINAL -->
+  <section id="tab-signal" class="tab">
+    <div class="grid g3">
+      <div class="card center">
+        <h3>Sinal ao vivo</h3>
+        <div class="big" id="liveDbm">–</div>
+        <div id="liveLabel" class="muted">dBm</div>
+        <div class="meter"><div id="liveBar"></div></div>
+        <div id="liveExtra" class="muted small"></div>
+        <div class="row gap" style="justify-content:center;margin-top:12px">
+          <button id="btnLive" class="primary">▶ Iniciar</button>
+          <label class="chk"><input type="checkbox" id="chkSound"> Som (bipe guia)</label>
+        </div>
+      </div>
+      <div class="card span2">
+        <h3>Histórico (últimos 2 min)</h3>
+        <canvas id="liveCanvas" height="220"></canvas>
+        <p class="muted small">Caminhe devagar com o notebook ou mova o roteador/repetidor. Com o som ligado, o bipe fica mais agudo e rápido quando o sinal melhora.</p>
+      </div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Mapa de cobertura por cômodo</h3>
+        <div class="row gap">
+          <input id="roomName" placeholder="Ex.: Sala, Quarto, Escritório…">
+          <button id="btnMark">📍 Registrar ponto</button>
+        </div>
+        <p class="muted small">Fique 5 s parado no local antes de registrar (usa a média dos últimos 5 s).</p>
+        <table id="roomTable" class="mt"><thead><tr><th>Local</th><th>Média</th><th>Qualidade</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="card">
+        <h3>Guia de níveis</h3>
+        <table class="levels">
+          <tr><td><span class="dot ok"></span> −30 a −50 dBm</td><td>Excelente — máximo desempenho</td></tr>
+          <tr><td><span class="dot ok"></span> −50 a −60 dBm</td><td>Muito bom — 4K, jogos, chamadas</td></tr>
+          <tr><td><span class="dot warn"></span> −60 a −67 dBm</td><td>Bom — mínimo para voz/vídeo confiável</td></tr>
+          <tr><td><span class="dot warn"></span> −67 a −70 dBm</td><td>Razoável — navegação e e-mail</td></tr>
+          <tr><td><span class="dot bad"></span> −70 a −80 dBm</td><td>Fraco — lento, instável</td></tr>
+          <tr><td><span class="dot bad"></span> abaixo de −80</td><td>Péssimo — quedas constantes</td></tr>
+        </table>
+        <p class="muted small">Dica: se vários cômodos ficarem abaixo de −67 dBm, a melhor solução é um sistema Mesh ou um segundo ponto de acesso ligado por cabo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTES -->
+  <section id="tab-tests" class="tab">
+    <div class="grid g3">
+      <div class="card">
+        <h3>Latência e perda</h3>
+        <p class="muted small">Ping de 20 pacotes para o roteador e para a internet. Separa problema de Wi-Fi de problema da operadora.</p>
+        <button class="primary" id="btnPing">Testar latência</button>
+        <div id="pingRes" class="mt"></div>
+      </div>
+      <div class="card">
+        <h3>Velocidade da internet</h3>
+        <p class="muted small">Download e upload via Cloudflare (~15 s).</p>
+        <button class="primary" id="btnSpeed">Testar velocidade</button>
+        <div id="speedRes" class="mt"></div>
+      </div>
+      <div class="card">
+        <h3>DNS mais rápido</h3>
+        <p class="muted small">Mede o tempo de resposta de vários servidores DNS para sites populares no Brasil.</p>
+        <button class="primary" id="btnDns">Comparar DNS</button>
+        <div id="dnsRes" class="mt"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OTIMIZAR -->
+  <section id="tab-optimize" class="tab">
+    <div class="card">
+      <h3>Correções rápidas</h3>
+      <div class="actions">
+        <button data-act="flushdns"><b>Limpar cache DNS</b><small>Resolve sites que não abrem</small></button>
+        <button data-act="reconnect"><b>Reconectar Wi-Fi</b><small>Força reassociação ao melhor ponto</small></button>
+        <button data-act="power_max"><b>Wi-Fi em desempenho máximo</b><small>Desativa economia de energia do adaptador</small></button>
+        <button data-act="renew" data-admin><b>Renovar IP</b><small>Pede novo endereço ao roteador 🛡</small></button>
+        <button data-act="dns_auto" data-admin><b>DNS automático</b><small>Volta ao DNS do roteador 🛡</small></button>
+        <button data-act="reset_stack" data-admin data-confirm="Isso redefine o Winsock e a pilha TCP/IP e exige reiniciar o PC. Continuar?"><b>Redefinir pilha de rede</b><small>Último recurso para falhas graves 🛡</small></button>
+      </div>
+      <p class="muted small">🛡 = pede permissão de administrador (janela do Windows).</p>
+      <pre id="actOut" class="out hidden"></pre>
+    </div>
+    <div class="card">
+      <div class="row between"><h3>Configurações avançadas do adaptador</h3><button id="btnProps">Carregar</button></div>
+      <p class="muted small">Opções do driver da sua placa Wi-Fi. Recomendações em <b class="c-mine">verde</b>. Alterar reinicia o adaptador por alguns segundos. 🛡</p>
+      <div id="netInfo" class="kv small"></div>
+      <div class="table-wrap"><table id="propTable"><thead><tr><th>Propriedade</th><th>Valor atual</th><th>Recomendado</th><th>Alterar</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+<div id="loading" class="loading hidden"><div class="spinner"></div><span id="loadingText">Analisando…</span></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
