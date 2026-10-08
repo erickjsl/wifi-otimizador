@@ -129,9 +129,16 @@ class Handler(BaseHTTPRequestHandler):
             data = f.read()
         if full.endswith("index.html"):
             data = data.replace(b"__TOKEN__", TOKEN.encode())
-        ctype = mimetypes.guess_type(full)[0] or "application/octet-stream"
-        if ctype.startswith("text/") or ctype.endswith("javascript"):
-            ctype += "; charset=utf-8"
+        if full.endswith(".json") or full.endswith("manifest.json"):
+            ctype = "application/manifest+json; charset=utf-8"
+        elif full.endswith("sw.js"):
+            ctype = "application/javascript; charset=utf-8"
+        elif full.endswith(".svg"):
+            ctype = "image/svg+xml"
+        else:
+            ctype = mimetypes.guess_type(full)[0] or "application/octet-stream"
+            if ctype.startswith("text/") or ctype.endswith("javascript"):
+                ctype += "; charset=utf-8"
         self.send_response(200)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))

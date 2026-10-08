@@ -1,0 +1,24 @@
+{
+  "name": "CertiFi Pro - Certificação de Rede Wi-Fi",
+  "short_name": "CertiFi Pro",
+  "description": "Aplicativo profissional de diagnóstico, otimização e certificação de cobertura Wi-Fi.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1020",
+  "theme_color": "#4f8cff",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
