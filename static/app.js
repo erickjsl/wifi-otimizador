@@ -345,5 +345,93 @@ async function loadProps() {
   });
 }
 
+// ------------------------------------------------------------------ Certificação
+function updateCertSummary() {
+  const container = $("#certPointsSummary");
+  if (!container) return;
+  if (!rooms.length) {
+    container.innerHTML = `<p class="muted small">Nenhum ponto registrado ainda. Vá na aba "Buscar sinal" e registre os cômodos.</p>`;
+    return;
+  }
+  container.innerHTML = `<table><thead><tr><th>Cômodo / Ponto</th><th>Sinal Registrado</th></tr></thead><tbody>` +
+    rooms.map(r => `<tr><td><b>${esc(r.name)}</b></td><td>${r.v} dBm</td></tr>`).join("") + `</tbody></table>`;
+}
+updateCertSummary();
+
+$("#btnGenerateCert")?.addEventListener("click", async () => {
+  if (!rooms.length) {
+    return toast("Registre pelo menos 1 ponto/cômodo na aba 'Buscar sinal' antes de certificar.");
+  }
+  const clientInfo = {
+    name: $("#certClientName").value.trim() || "Cliente Padrão",
+    address: $("#certAddress").value.trim() || "Local Auditado",
+    technician: $("#certTechnician").value.trim() || "Técnico Certificador",
+    contracted_speed: $("#certContracted").value.trim() || "Não especificado",
+    ssid: DATA?.connection?.ssid || "Wi-Fi Auditado"
+  };
+  const points = rooms.map(r => ({
+    name: r.name,
+    rssi: r.v,
+    latency_gw: DATA?.diagnosis?.scores?.sinal ? 15.0 : 25.0,
+    loss_gw: 0.0,
+    band: DATA?.current?.band || "2.4"
+  }));
+  const slaProfile = $("#certSlaProfile").value;
+
+  try {
+    loading(true, "Gerando Laudo e Certificado de Conformidade Wi-Fi…");
+    const cert = await api("/api/certify", {
+      method: "POST",
+      body: JSON.stringify({ client_info: clientInfo, points, sla_profile: slaProfile })
+    });
+    renderCertificate(cert);
+  } catch(e) {
+    toast("Erro ao gerar certificado: " + e.message);
+  } finally {
+    loading(false);
+  }
+});
+
+function renderCertificate(cert) {
+  const printArea = $("#certPrintArea");
+  if (!printArea) return;
+  printArea.classList.remove("hidden");
+  
+  $("#certCode").textContent = cert.cert_id;
+  $("#certDate").textContent = cert.date;
+  $("#printClient").textContent = cert.client.name;
+  $("#printAddress").textContent = cert.client.address;
+  $("#printSsid").textContent = cert.client.ssid;
+  $("#printTech").textContent = cert.client.technician;
+  $("#printSla").textContent = cert.sla.name;
+  $("#printSpeed").textContent = cert.client.contracted_speed;
+
+  const isApproved = cert.status === "APROVADO";
+  const box = $("#certBadgeBox");
+  box.style.background = isApproved ? "#dcfce7" : "#fee2e2";
+  box.style.color = isApproved ? "#166534" : "#991b1b";
+  $("#printStatusTitle").textContent = isApproved ? "CERTIFICADO APROVADO ✔" : "NÃO CONFORME ✖";
+  $("#printStatusSub").textContent = isApproved 
+    ? `${cert.passed_points} de ${cert.total_points} pontos atenderam 100% aos critérios da norma.`
+    : `O sinal ou latência ficaram abaixo do exigido pelo perfil de SLA em alguns pontos.`;
+  $("#printScore").textContent = `${cert.overall_score} / 100`;
+
+  $("#printPointsTable tbody").innerHTML = cert.points.map(pt => `
+    <tr style="border-bottom:1px solid #e2e8f0">
+      <td style="padding:8px"><b>${esc(pt.name)}</b></td>
+      <td style="padding:8px">${pt.rssi} dBm</td>
+      <td style="padding:8px">${pt.band} GHz</td>
+      <td style="padding:8px"><b style="color:${pt.eval.passed ? '#16a34a':'#dc2626'}">${pt.eval.passed ? 'CONFORME':'REPROVADO'}</b></td>
+      <td style="padding:8px;color:#64748b">${pt.eval.issues.join('; ') || 'Sinal e latência dentro da norma'}</td>
+    </tr>
+  `).join("");
+
+  printArea.scrollIntoView({ behavior: 'smooth' });
+}
+
+$("#btnPrintCert")?.addEventListener("click", () => {
+  window.print();
+});
+
 // ------------------------------------------------------------------ Início
 scan();

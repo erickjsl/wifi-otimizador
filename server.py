@@ -15,6 +15,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
 import analysis
+import certify
 import nettools
 import wlan
 
@@ -180,7 +181,15 @@ class Handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length") or 0)
             body = json.loads(self.rfile.read(length) or b"{}")
-            if urlparse(self.path).path != "/api/action":
+            path = urlparse(self.path).path
+            if path == "/api/certify":
+                cdata = certify.generate_certificate_data(
+                    body.get("client_info") or {},
+                    body.get("points") or [],
+                    body.get("sla_profile") or "residencial_padrao"
+                )
+                return self._json(cdata)
+            if path != "/api/action":
                 return self._json({"error": "Rota inexistente"}, 404)
             n = net_info()
             ctx = {"iface": n.get("name"), "index": n.get("index")}

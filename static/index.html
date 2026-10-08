@@ -19,6 +19,7 @@
     <button data-tab="signal">Buscar sinal</button>
     <button data-tab="tests">Testes</button>
     <button data-tab="optimize">Otimizar</button>
+    <button data-tab="certify" style="border: 1px solid var(--accent); color: var(--accent);">📜 Certificação</button>
   </nav>
   <button id="btnScan" class="primary">⟳ Analisar agora</button>
 </header>
@@ -170,6 +171,97 @@
       <p class="muted small">Opções do driver da sua placa Wi-Fi. Recomendações em <b class="c-mine">verde</b>. Alterar reinicia o adaptador por alguns segundos. 🛡</p>
       <div id="netInfo" class="kv small"></div>
       <div class="table-wrap"><table id="propTable"><thead><tr><th>Propriedade</th><th>Valor atual</th><th>Recomendado</th><th>Alterar</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- CERTIFICAÇÃO -->
+  <section id="tab-certify" class="tab">
+    <div class="grid g2">
+      <div class="card">
+        <h3>Dados do Cliente / Instalação</h3>
+        <div class="grid g2 gap mt">
+          <input id="certClientName" placeholder="Nome do Cliente ou Empresa">
+          <input id="certAddress" placeholder="Endereço / Local">
+          <input id="certTechnician" placeholder="Nome do Técnico Certificador">
+          <input id="certContracted" placeholder="Plano Contratado (ex.: 500 Mega Fibra)">
+        </div>
+        <h4 class="mt" style="color:var(--accent);font-size:14px">Perfil de SLA / Norma de Aceitação</h4>
+        <select id="certSlaProfile" style="width:100%">
+          <option value="residencial_padrao">Residencial Padrão (Sinal ≥ -67 dBm, Latência ≤ 45ms)</option>
+          <option value="residencial_premium">Residencial Premium / Home Office (Sinal ≥ -60 dBm, Latência ≤ 20ms, 0% perda)</option>
+          <option value="corporativo">Corporativo / Comercial (Sinal ≥ -65 dBm, Latência ≤ 15ms, 0% perda)</option>
+        </select>
+        <button id="btnGenerateCert" class="primary mt" style="width:100%">📜 Emitir Certificado de Conformidade Wi-Fi</button>
+      </div>
+
+      <div class="card">
+        <h3>Pontos Auditados para Certificação</h3>
+        <p class="muted small">O relatório utilizará os pontos médios registrados na aba "Buscar Sinal".</p>
+        <div id="certPointsSummary" class="mt"></div>
+        <button onclick="gotoTab('signal')" class="mt">📍 Adicionar mais pontos no local →</button>
+      </div>
+    </div>
+
+    <!-- Área de Visualização do Certificado Impresso / PDF -->
+    <div id="certPrintArea" class="card hidden" style="background:#fff;color:#1e293b;border:2px solid #cbd5e1;padding:30px;border-radius:12px;margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f172a;padding-bottom:15px">
+        <div>
+          <h2 style="margin:0;color:#0f172a;font-size:24px">CERTIFICADO DE CONFORMIDADE DE REDE WI-FI</h2>
+          <span style="font-size:13px;color:#64748b">Laudo Técnico de Qualidade e Cobertura Sem Fio</span>
+        </div>
+        <div style="text-align:right">
+          <b id="certCode" style="font-size:14px;color:#2563eb;display:block"></b>
+          <small id="certDate" style="color:#64748b"></small>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:20px 0;background:#f8fafc;padding:15px;border-radius:8px;font-size:13px">
+        <div>
+          <p style="margin:4px 0"><b>Cliente:</b> <span id="printClient"></span></p>
+          <p style="margin:4px 0"><b>Endereço:</b> <span id="printAddress"></span></p>
+          <p style="margin:4px 0"><b>SSID Auditado:</b> <span id="printSsid"></span></p>
+        </div>
+        <div>
+          <p style="margin:4px 0"><b>Técnico Certificador:</b> <span id="printTech"></span></p>
+          <p style="margin:4px 0"><b>Perfil de SLA:</b> <span id="printSla"></span></p>
+          <p style="margin:4px 0"><b>Velocidade Contratada:</b> <span id="printSpeed"></span></p>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:15px;border-radius:8px;margin-bottom:20px" id="certBadgeBox">
+        <div>
+          <h3 style="margin:0;font-size:20px" id="printStatusTitle"></h3>
+          <p style="margin:4px 0 0;font-size:13px" id="printStatusSub"></p>
+        </div>
+        <div style="font-size:28px;font-weight:bold" id="printScore"></div>
+      </div>
+
+      <h4 style="margin:15px 0 10px;color:#0f172a">Medições por Cômodo / Ponto do Ambiente</h4>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px" id="printPointsTable">
+        <thead>
+          <tr style="background:#e2e8f0;color:#334155;text-align:left">
+            <th style="padding:8px">Ponto / Cômodo</th>
+            <th style="padding:8px">Sinal (dBm)</th>
+            <th style="padding:8px">Banda</th>
+            <th style="padding:8px">Status SLA</th>
+            <th style="padding:8px">Observações / Não Conformidades</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:40px;border-top:1px dashed #94a3b8;padding-top:20px">
+        <div style="font-size:11px;color:#64748b">
+          <p style="margin:0">Documento gerado por Wi-Fi Otimizador Pro.</p>
+          <p style="margin:2px 0 0">Assinatura digital e validação de conformidade técnica.</p>
+        </div>
+        <div style="text-align:center;width:200px">
+          <div style="border-bottom:1px solid #0f172a;margin-bottom:4px"></div>
+          <span style="font-size:12px;color:#334155">Assinatura do Técnico</span>
+        </div>
+      </div>
+
+      <button id="btnPrintCert" class="primary mt" style="width:100%;margin-top:20px">🖨️ Imprimir / Salvar como PDF</button>
     </div>
   </section>
 </main>
