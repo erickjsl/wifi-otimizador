@@ -4,10 +4,22 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 let DATA = null, BAND = "2.4", SORT = { k: "rssi", dir: -1 };
 
 // ------------------------------------------------------------------ API
+function getApiBase() {
+  let saved = localStorage.getItem("server_ip");
+  if (saved) {
+    saved = saved.trim();
+    if (saved && !saved.startsWith("http")) saved = "http://" + saved;
+    return saved ? saved.replace(/\/$/, "") : "";
+  }
+  return "";
+}
+
 async function api(path, opts = {}) {
-  const res = await fetch(path, {
+  const base = getApiBase();
+  const url = base ? (base + path) : path;
+  const res = await fetch(url, {
     ...opts,
-    headers: { "X-Token": window.API_TOKEN, "Content-Type": "application/json", ...(opts.headers || {}) },
+    headers: { "X-Token": window.API_TOKEN || "__TOKEN__", "Content-Type": "application/json", ...(opts.headers || {}) },
   });
   const j = await res.json();
   if (!res.ok || j.error) throw new Error(j.error || res.statusText);
@@ -467,6 +479,31 @@ function renderCertificate(cert) {
 
 $("#btnPrintCert")?.addEventListener("click", () => {
   window.print();
+});
+
+// ------------------------------------------------------------------ Server IP UI
+document.addEventListener("DOMContentLoaded", () => {
+  const ipInput = $("#serverIpInput");
+  const saveBtn = $("#btnSaveServerIp");
+  const statusSpan = $("#serverStatus");
+  if (ipInput) {
+    ipInput.value = localStorage.getItem("server_ip") || "";
+    if (saveBtn) {
+      saveBtn.onclick = () => {
+        const val = ipInput.value.trim();
+        if (val) {
+          localStorage.setItem("server_ip", val);
+          if (statusSpan) statusSpan.textContent = "✔ IP Salvo (" + val + ")";
+          toast("Conectando ao servidor: " + val);
+        } else {
+          localStorage.removeItem("server_ip");
+          if (statusSpan) statusSpan.textContent = "";
+          toast("Usando servidor padrão");
+        }
+        scan();
+      };
+    }
+  }
 });
 
 // ------------------------------------------------------------------ Início

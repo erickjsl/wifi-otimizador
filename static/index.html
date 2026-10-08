@@ -4,18 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>CertiFi Pro - Certificação e Otimização Wi-Fi</title>
-<link rel="stylesheet" href="/style.css">
-<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4f8cff">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="/icon-192.svg">
+<link rel="apple-touch-icon" href="icon-192.svg">
 <script>
   window.API_TOKEN = "__TOKEN__";
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW error:', err));
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
     });
   }
 </script>
@@ -36,6 +36,13 @@
   </nav>
   <button id="btnScan" class="primary">⟳ Analisar agora</button>
 </header>
+
+<div id="serverConfigBar" style="background: rgba(18,26,46,0.95); padding: 8px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; flex-wrap: wrap;">
+  <span>🔌 <b>IP do Servidor PC:</b></span>
+  <input type="text" id="serverIpInput" placeholder="ex: 192.168.1.15:8765" style="max-width: 210px; padding: 5px 10px; font-size: 13px;" />
+  <button id="btnSaveServerIp" style="padding: 5px 12px; font-size: 13px;" class="primary">Conectar</button>
+  <span id="serverStatus" style="font-size: 12px; color: var(--muted);"></span>
+</div>
 
 <main>
   <div id="error" class="banner bad hidden"></div>
@@ -282,6 +289,6 @@
 <div id="toast" class="toast hidden"></div>
 <div id="loading" class="loading hidden"><div class="spinner"></div><span id="loadingText">Analisando…</span></div>
 
-<script src="/app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
