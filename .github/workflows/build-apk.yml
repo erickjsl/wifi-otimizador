@@ -21,15 +21,29 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.5'
 
     - name: Build Android APK
       run: |
         cd android-app
-        chmod +x gradlew || true
-        gradle assembleDebug --no-daemon
+        gradle assembleDebug --no-daemon --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: CertiFiPro-Android-APK
         path: android-app/app/build/outputs/apk/debug/app-debug.apk
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      if: github.ref == 'refs/heads/main'
+      with:
+        tag_name: v1.0.0
+        name: CertiFi Pro v1.0.0 (APK Instalador Android)
+        body: |
+          ### 📱 CertiFi Pro - Aplicativo Android Nativo
+          Baixe o arquivo `app-debug.apk` diretamente no seu celular Android para instalar o CertiFi Pro com suporte a Notificações e auditoria de Wi-Fi!
+        files: android-app/app/build/outputs/apk/debug/app-debug.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
