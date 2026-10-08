@@ -1,61 +1,39 @@
-# Wi-Fi Otimizador 📶
+# CertiFi Pro - Certificação e Otimização Wi-Fi 📶📱
 
-O **Wi-Fi Otimizador** é uma aplicação desktop com interface web local criada para diagnosticar, analisar e otimizar redes Wi-Fi no Windows.
+O **CertiFi Pro** é uma aplicação profissional de diagnóstico, auditoria, otimização e certificação de conformidade de redes Wi-Fi.
 
-Ele utiliza chamadas diretas à API nativa do Windows (`wlanapi.dll`) via `ctypes` em Python, garantindo acesso completo aos beaconeers e Information Elements (largura de canal, padrões Wi-Fi 4/5/6/6E/7, segurança WPA2/WPA3, RSSI exato em dBm), independente do idioma do SO.
-
----
-
-## 🚀 Funcionalidades
-
-- **Visão Geral e Diagnóstico Inteligente**: Dá uma nota de 0 a 100 para a qualidade da sua rede e gera recomendações detalhadas para o seu roteador (canal ideal, largura de banda, modo e potência).
-- **Análise de Espectro e Canais**: Gráfico em Canvas estilo analisador de espectro (2,4 GHz, 5 GHz e 6 GHz), mostrando sobreposição real de redes vizinhas e os canais mais livres.
-- **Bipe Guia e Busca de Sinal ao Vivo**: Monitoramento de sinal em tempo real (dBm) com gráficos históricos e um bipe sonoro (AudioContext) que muda de tom e frequência à medida que o sinal melhora — ideal para andar com o notebook e achar a melhor posição.
-- **Mapeamento de Cômodos**: Registre a média de sinal dBm em cada cômodo da sua casa.
-- **Suite de Testes de Conexão**:
-  - Teste de latência e perda de pacotes separando falhas do Wi-Fi local de problemas do provedor de internet.
-  - Teste de velocidade de download/upload via Cloudflare.
-  - Benchmark de servidores DNS (Google, Cloudflare, Quad9, AdGuard, OpenDNS).
-- **Otimização do Adaptador**:
-  - Limpeza de cache DNS, reconexão rápida e renovação de IP.
-  - Ajuste do plano de energia do adaptador Wi-Fi para Desempenho Máximo.
-  - Leitura e alteração de propriedades avançadas da placa de rede (Banda Preferencial, SMPS, etc.).
+Ele pode ser executado como **PWA (Progressive Web App)** nativo no Android/iOS ou empacotado como aplicativo **APK Android** nativo com suporte a notificações do sistema.
 
 ---
 
-## 📋 Pré-requisitos
+## 🚀 Novas Funcionalidades (Versão Certificação)
 
-- **Sistema Operacional**: Windows 10 ou Windows 11 (64-bit).
-- **Python**: versão 3.8 ou superior instalada (sem necessidade de pacotes externos adicionais).
-- **Localização**: No Windows 11, certifique-se de ativar *Configurações > Privacidade e Segurança > Localização* e permitir acesso a aplicativos de área de trabalho.
-
----
-
-## 🛠️ Como Executar
-
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/erickjsl/wifi-otimizador.git
-   cd wifi-otimizador
-   ```
-
-2. Execute o script de inicialização ou o arquivo Python:
-   - Dê dois cliques em **`Iniciar.bat`**  
-     *ou*
-   - Execute via terminal:
-     ```bash
-     python server.py
-     ```
-
-3. O navegador abrirá automaticamente em `http://127.0.0.1:8765/`.
+- **📜 Módulo de Certificação Wi-Fi**:
+  - Seleção de norma/SLA (**Residencial Padrão**, **Residencial Premium / Home Office**, **Corporativo / Comercial**).
+  - Medição e avaliação de conformidade por cômodo (Sinal dBm, Latência, Perda de Pacotes, Banda).
+  - Emissão e visualização de **Laudo Técnico / Certificado de Conformidade** em formato A4 impresso/PDF com código de validação único.
+- **🔔 Notificações Nativas no Android**:
+  - Alerta sonoro e notificação push do sistema quando um Laudo de Conformidade é gerado ou aprovado.
+  - Notificação de aviso quando o sinal dBm cai abaixo do limite de SLA no ambiente.
+- **📱 Instalação como App PWA ou APK**:
+  - Pode ser instalado com 1 clique diretamente pelo navegador Chrome no Android.
+  - Projeto Android nativo completo disponível na pasta `android-app/`.
 
 ---
 
-## 🛡️ Segurança
+## 🛠️ Como Instalar no Android (Modo PWA)
 
-- O servidor local escuta **apenas** na interface `127.0.0.1`.
-- A API REST exige um token único de sessão gerado a cada execução (`X-Token`), impedindo ataques CSRF a partir de navegadores web.
-- Ações administrativas (como alteração de propriedades da placa ou redefinição de pilha de rede) utilizam elevação segura do Windows UAC.
+1. Abra o navegador Chrome no seu dispositivo Android e acesse o endereço do servidor.
+2. O Chrome exibirá a mensagem **"Adicionar à tela inicial"** ou **"Instalar CertiFi Pro"**.
+3. O ícone do aplicativo aparecerá na sua tela inicial funcionando como um app nativo em tela cheia!
+
+---
+
+## 📦 Como Compilar o APK Android Nativo
+
+1. Abra a pasta `android-app/` no **Android Studio**.
+2. Vá em `Build > Build Bundle(s) / APK(s) > Build APK(s)`.
+3. O instalador `app-debug.apk` será gerado na pasta `android-app/app/build/outputs/apk/`.
 
 ---
 

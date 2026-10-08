@@ -191,7 +191,39 @@ window.addEventListener("resize", () => { drawCharts(); drawLive(); });
 
 // ------------------------------------------------------------------ Sinal ao vivo
 let liveTimer = null, hist = [], audio = null, beepTimer = null, lastRssi = null;
-$("#btnLive").onclick = () => liveTimer ? stopLive() : startLive();
+// ------------------------------------------------------------------ Notificações
+function requestNotificationPermission() {
+  if ("Notification" in window && Notification.permission !== "granted") {
+    Notification.requestPermission().then(perm => {
+      if (perm === "granted") {
+        toast("Notificações de auditoria ativadas ✔");
+        sendNotification("CertiFi Pro", { body: "Notificações ativadas para auditoria de Wi-Fi!" });
+      }
+    });
+  }
+}
+
+function sendNotification(title, options = {}) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, {
+          icon: "/icon-192.svg",
+          badge: "/icon-192.svg",
+          vibrate: [200, 100, 200],
+          ...options
+        });
+      });
+    } else {
+      new Notification(title, { icon: "/icon-192.svg", ...options });
+    }
+  }
+}
+
+$("#btnLive").onclick = () => {
+  requestNotificationPermission();
+  liveTimer ? stopLive() : startLive();
+};
 function startLive() {
   $("#btnLive").textContent = "■ Parar"; pollSignal(); liveTimer = setInterval(pollSignal, 1000);
   if ($("#chkSound").checked) startBeep();
@@ -427,6 +459,10 @@ function renderCertificate(cert) {
   `).join("");
 
   printArea.scrollIntoView({ behavior: 'smooth' });
+  
+  sendNotification(`Laudo Wi-Fi: ${cert.status}`, {
+    body: `Certificado ${cert.cert_id} gerado com nota ${cert.overall_score}/100.`
+  });
 }
 
 $("#btnPrintCert")?.addEventListener("click", () => {

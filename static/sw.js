@@ -1,4 +1,4 @@
-const CACHE_NAME = "certifi-v1";
+const CACHE_NAME = "certifi-v2";
 const ASSETS = [
   "/",
   "/index.html",
@@ -31,11 +31,24 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   if (e.request.url.includes("/api/")) {
-    return; // Não envia requisições da API para o cache do Service Worker
+    return;
   }
   e.respondWith(
     caches.match(e.request).then((cached) => {
       return cached || fetch(e.request);
+    })
+  );
+});
+
+// Suporte a Notificações do Sistema no Android
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) {
+        return clientList[0].focus();
+      }
+      return clients.openWindow("/");
     })
   );
 });
