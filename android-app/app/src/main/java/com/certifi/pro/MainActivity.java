@@ -30,6 +30,9 @@ public class MainActivity extends Activity {
         webSettings.setDomStorageEnabled(true);
         webSettings.setDatabaseEnabled(true);
         webSettings.setAllowFileAccess(true);
+        webSettings.setAllowContentAccess(true);
+        webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
         webSettings.setMediaPlaybackRequiresUserGesture(false);
 
         webView.setWebViewClient(new WebViewClient());
@@ -43,8 +46,8 @@ public class MainActivity extends Activity {
         // Solicita permissões de localização e notificação no Android 13+
         requestNativePermissions();
 
-        // Carrega o servidor CertiFi Pro
-        webView.loadUrl("http://127.0.0.1:8765/");
+        // Carrega a interface nativa embarcada dentro do APK
+        webView.loadUrl("file:///android_asset/index.html");
     }
 
     private void requestNativePermissions() {

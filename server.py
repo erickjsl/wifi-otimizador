@@ -19,7 +19,9 @@ import certify
 import nettools
 import wlan
 
-HOST, PORT = "127.0.0.1", 8765
+import socket
+
+HOST, PORT = "0.0.0.0", 8765
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 TOKEN = secrets.token_urlsafe(24)  # protege a API contra sites maliciosos (CSRF)
 
@@ -107,7 +109,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def _host_ok(self):
         host = (self.headers.get("Host") or "").split(":")[0]
-        return host in ("127.0.0.1", "localhost")
+        if host in ("127.0.0.1", "localhost", "0.0.0.0"):
+            return True
+        # Aceita conexões vindas da rede local privada (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+        if host.startswith("192.168.") or host.startswith("10.") or host.startswith("172."):
+            return True
+        return False
 
     def _json(self, obj, code=200):
         data = json.dumps(obj, ensure_ascii=False, default=str).encode("utf-8")
@@ -213,18 +220,33 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"ok": False, "output": f"{type(e).__name__}: {e}"}, 500)
 
 
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+
 def main():
     if sys.platform != "win32":
         print("Este app funciona apenas no Windows.")
         sys.exit(1)
     srv = ThreadingHTTPServer((HOST, PORT), Handler)
-    url = f"http://{HOST}:{PORT}/"
-    print("=" * 56)
-    print("  Wi-Fi Otimizador rodando em", url)
+    local_ip = get_local_ip()
+    url_local = f"http://127.0.0.1:{PORT}/"
+    url_network = f"http://{local_ip}:{PORT}/"
+    print("=" * 64)
+    print("  CertiFi Pro rodando em:")
+    print("    • No Computador: ", url_local)
+    print("    • No Celular / Tablet: ", url_network)
     print("  Feche esta janela (ou Ctrl+C) para encerrar.")
-    print("=" * 56)
+    print("=" * 64)
     if "--no-browser" not in sys.argv:
-        threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+        threading.Timer(0.8, lambda: webbrowser.open(url_local)).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
