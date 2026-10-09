@@ -37,11 +37,12 @@
   <button id="btnScan" class="primary">⟳ Analisar agora</button>
 </header>
 
-<div id="serverConfigBar" style="background: rgba(18,26,46,0.95); padding: 8px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; flex-wrap: wrap;">
-  <span>🔌 <b>IP do Servidor PC:</b></span>
-  <input type="text" id="serverIpInput" placeholder="ex: 192.168.1.15:8765" style="max-width: 210px; padding: 5px 10px; font-size: 13px;" />
-  <button id="btnSaveServerIp" style="padding: 5px 12px; font-size: 13px;" class="primary">Conectar</button>
-  <span id="serverStatus" style="font-size: 12px; color: var(--muted);"></span>
+<div id="serverConfigBar" style="background: rgba(18,26,46,0.95); padding: 10px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; flex-wrap: wrap;">
+  <span>🔌 <b>Servidor PC:</b></span>
+  <input type="text" id="serverIpInput" placeholder="ex: 192.168.1.15:8765" style="max-width: 190px; padding: 6px 10px; font-size: 13px;" />
+  <button id="btnSaveServerIp" style="padding: 6px 14px; font-size: 13px;" class="primary">Conectar</button>
+  <button id="btnAutoDetect" style="padding: 6px 12px; font-size: 13px; background: var(--panel2);">🔍 Detectar IP</button>
+  <span id="serverStatus" style="font-size: 12px; color: var(--muted); width: 100%; text-align: center; margin-top: 2px;"></span>
 </div>
 
 <main>

@@ -8,22 +8,37 @@ function getApiBase() {
   let saved = localStorage.getItem("server_ip");
   if (saved) {
     saved = saved.trim();
-    if (saved && !saved.startsWith("http")) saved = "http://" + saved;
+    if (saved && !saved.startsWith("http://") && !saved.startsWith("https://")) {
+      saved = "http://" + saved;
+    }
     return saved ? saved.replace(/\/$/, "") : "";
   }
-  return "";
+  if (window.location.protocol.startsWith("http")) {
+    return "";
+  }
+  return null; // Nulo indica rodando via file:// no Android sem IP configurado
 }
 
 async function api(path, opts = {}) {
   const base = getApiBase();
+  if (base === null && window.location.protocol === "file:") {
+    throw new Error("🔌 Conecte ao seu PC: Digite o IP do computador no campo acima e clique em 'Conectar' ou 'Detectar IP'.");
+  }
   const url = base ? (base + path) : path;
-  const res = await fetch(url, {
-    ...opts,
-    headers: { "X-Token": window.API_TOKEN || "__TOKEN__", "Content-Type": "application/json", ...(opts.headers || {}) },
-  });
-  const j = await res.json();
-  if (!res.ok || j.error) throw new Error(j.error || res.statusText);
-  return j;
+  try {
+    const res = await fetch(url, {
+      ...opts,
+      headers: { "X-Token": window.API_TOKEN || "__TOKEN__", "Content-Type": "application/json", ...(opts.headers || {}) },
+    });
+    const j = await res.json();
+    if (!res.ok || j.error) throw new Error(j.error || res.statusText);
+    return j;
+  } catch (e) {
+    if (e.message.includes("Failed to fetch") || e.name === "TypeError") {
+      throw new Error(`Não foi possível conectar em "${base || url}". Verifique se o 'python server.py' está rodando no PC e se ambos estão na mesma Wi-Fi.`);
+    }
+    throw e;
+  }
 }
 function toast(msg, ms = 3500) {
   const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden");
@@ -481,27 +496,83 @@ $("#btnPrintCert")?.addEventListener("click", () => {
   window.print();
 });
 
-// ------------------------------------------------------------------ Server IP UI
+// ------------------------------------------------------------------ Server IP UI & Auto Detect
+async function autoDetectServer() {
+  const statusSpan = $("#serverStatus");
+  if (statusSpan) statusSpan.textContent = "🔍 Procurando servidor Python na sua Wi-Fi...";
+  toast("Varrendo rede local procurando o PC...");
+
+  const candidateIPs = [];
+  const prefixes = ["192.168.1.", "192.168.0.", "192.168.15.", "10.0.0.", "192.168.100."];
+  for (const pref of prefixes) {
+    for (let i = 2; i <= 254; i += (i < 20 ? 1 : 5)) {
+      candidateIPs.push(`${pref}${i}:8765`);
+    }
+  }
+
+  const checkIp = async (ip) => {
+    try {
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 1200);
+      const res = await fetch(`http://${ip}/api/signal`, {
+        signal: controller.signal,
+        headers: { "X-Token": "__TOKEN__" }
+      });
+      clearTimeout(tid);
+      if (res.ok) return ip;
+    } catch (e) {}
+    return null;
+  };
+
+  const batchSize = 15;
+  for (let i = 0; i < candidateIPs.length; i += batchSize) {
+    const batch = candidateIPs.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(checkIp));
+    const found = results.find(x => x !== null);
+    if (found) {
+      const formatted = "http://" + found;
+      localStorage.setItem("server_ip", formatted);
+      const input = $("#serverIpInput");
+      if (input) input.value = found;
+      if (statusSpan) statusSpan.textContent = "✔ Servidor PC localizado em: " + found;
+      toast("Encontrado! Conectado a " + found);
+      scan();
+      return;
+    }
+  }
+
+  if (statusSpan) statusSpan.textContent = "❌ Servidor não localizado na varredura. Digite o IP do PC acima e clique em Conectar.";
+  toast("Servidor não localizado. Digite o IP do PC.");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const ipInput = $("#serverIpInput");
   const saveBtn = $("#btnSaveServerIp");
+  const autoBtn = $("#btnAutoDetect");
   const statusSpan = $("#serverStatus");
+
   if (ipInput) {
     ipInput.value = localStorage.getItem("server_ip") || "";
     if (saveBtn) {
       saveBtn.onclick = () => {
-        const val = ipInput.value.trim();
+        let val = ipInput.value.trim();
         if (val) {
+          if (!val.startsWith("http://") && !val.startsWith("https://")) {
+            val = "http://" + val;
+          }
           localStorage.setItem("server_ip", val);
-          if (statusSpan) statusSpan.textContent = "✔ IP Salvo (" + val + ")";
+          if (statusSpan) statusSpan.textContent = "✔ Conectado a " + val;
           toast("Conectando ao servidor: " + val);
         } else {
           localStorage.removeItem("server_ip");
           if (statusSpan) statusSpan.textContent = "";
-          toast("Usando servidor padrão");
+          toast("IP removido");
         }
         scan();
       };
+    }
+    if (autoBtn) {
+      autoBtn.onclick = autoDetectServer;
     }
   }
 });
