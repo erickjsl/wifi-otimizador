@@ -59,13 +59,31 @@ const sigColor = r => r >= -60 ? "var(--ok)" : r >= -70 ? "var(--warn)" : "var(-
 const sigPct = r => Math.max(0, Math.min(100, (r + 95) / 65 * 100));
 const bandLabel = b => b === "2.4" ? "2,4 GHz" : b + " GHz";
 
-// ------------------------------------------------------------------ Tabs
+// ------------------------------------------------------------------ Tabs & Menu Recolhível
+const nav = $("#mainNav");
+const btnToggleMenu = $("#btnToggleMenu");
+if (btnToggleMenu && nav) {
+  btnToggleMenu.onclick = () => {
+    nav.classList.toggle("open");
+    btnToggleMenu.textContent = nav.classList.contains("open") ? "✕" : "☰";
+  };
+}
+
 $$("nav button").forEach(b => b.onclick = () => {
   $$("nav button").forEach(x => x.classList.toggle("active", x === b));
   $$(".tab").forEach(t => t.classList.toggle("active", t.id === "tab-" + b.dataset.tab));
-  if (b.dataset.tab === "channels") drawCharts();
+  
+  // No mobile, recolhe o menu após selecionar uma aba para deixar a tela expandida
+  if (nav && nav.classList.contains("open")) {
+    nav.classList.remove("open");
+    if (btnToggleMenu) btnToggleMenu.textContent = "☰";
+  }
+
+  if (b.dataset.tab === "channels") {
+    setTimeout(drawCharts, 50);
+  }
   if (b.dataset.tab === "signal") {
-    drawLive();
+    setTimeout(drawLive, 50);
     if (!liveTimer) {
       pollSignal();
       startLive();
@@ -154,9 +172,18 @@ $$("#bandSel button").forEach(b => b.onclick = () => {
   BAND = b.dataset.band; $$("#bandSel button").forEach(x => x.classList.toggle("active", x === b)); drawCharts();
 });
 function setupCanvas(cv) {
-  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = +cv.getAttribute("height");
-  cv.width = w * dpr; cv.height = h * dpr; cv.style.height = h + "px";
-  const ctx = cv.getContext("2d"); ctx.scale(dpr, dpr); return [ctx, w, h];
+  if (!cv) return [null, 0, 0];
+  const dpr = window.devicePixelRatio || 1;
+  const rect = cv.getBoundingClientRect();
+  const parentWidth = cv.parentElement ? cv.parentElement.clientWidth - 40 : 300;
+  const w = Math.max(100, Math.floor(cv.clientWidth || rect.width || parentWidth || 300));
+  const h = +cv.getAttribute("height") || 220;
+  cv.width = Math.floor(w * dpr);
+  cv.height = Math.floor(h * dpr);
+  cv.style.height = h + "px";
+  const ctx = cv.getContext("2d");
+  if (ctx) ctx.scale(dpr, dpr);
+  return [ctx, w, h];
 }
 const chFreq = (b, ch) => b === "2.4" ? (ch === 14 ? 2484 : 2407 + 5 * ch) : b === "5" ? 5000 + 5 * ch : 5950 + 5 * ch;
 const RANGES = { "2.4": [2395, 2495], "5": [5160, 5845], "6": [5935, 7125] };
@@ -287,19 +314,98 @@ async function pollSignal() {
 function drawLive() {
   if (!$("#tab-signal").classList.contains("active")) return;
   const [ctx, W, H] = setupCanvas($("#liveCanvas"));
-  const pad = { l: 40, r: 10, t: 10, b: 10 };
-  const Y = v => pad.t + (1 - (v + 95) / 70) * (H - pad.t - pad.b);
-  ctx.font = "11px Segoe UI"; ctx.fillStyle = "#8b97b3";
-  [[-25, -60, "rgba(34,197,94,.07)"], [-60, -70, "rgba(245,165,36,.07)"], [-70, -95, "rgba(239,68,68,.07)"]].forEach(([a, b, c]) => {
-    ctx.fillStyle = c; ctx.fillRect(pad.l, Y(a), W - pad.l - pad.r, Y(b) - Y(a));
+  if (!ctx || W <= 0 || H <= 0) return;
+  const pad = { l: 40, r: 16, t: 14, b: 24 };
+  const plotW = Math.max(10, W - pad.l - pad.r);
+  const plotH = Math.max(10, H - pad.t - pad.b);
+  const Y = v => pad.t + Math.max(0, Math.min(1, 1 - (v + 95) / 70)) * plotH;
+
+  // Fundo com zonas de qualidade de sinal
+  [[-25, -60, "rgba(34,197,94,.08)"], [-60, -70, "rgba(245,165,36,.08)"], [-70, -95, "rgba(239,68,68,.08)"]].forEach(([a, b, c]) => {
+    ctx.fillStyle = c;
+    const yTop = Y(a), yBottom = Y(b);
+    ctx.fillRect(pad.l, yTop, plotW, yBottom - yTop);
   });
+
+  // Linhas de grade e valores dBm
+  ctx.font = "11px Segoe UI, system-ui, sans-serif";
   ctx.fillStyle = "#8b97b3";
-  for (let d = -90; d <= -30; d += 10) ctx.fillText(d, 6, Y(d) + 4);
-  if (hist.length < 2) return;
-  const X = i => pad.l + i / 119 * (W - pad.l - pad.r);
-  const off = 120 - hist.length;
-  ctx.beginPath(); hist.forEach((p, i) => i ? ctx.lineTo(X(i + off), Y(p.v)) : ctx.moveTo(X(i + off), Y(p.v)));
-  ctx.strokeStyle = "#4f8cff"; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.strokeStyle = "rgba(36,48,77,.5)";
+  ctx.lineWidth = 1;
+  for (let d = -90; d <= -30; d += 15) {
+    const y = Y(d);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(W - pad.r, y);
+    ctx.stroke();
+    ctx.fillText(`${d}`, 8, y + 4);
+  }
+
+  // Se não tiver pontos ainda, exibe dica
+  if (!hist.length) {
+    ctx.fillStyle = "#8b97b3";
+    ctx.textAlign = "center";
+    ctx.fillText("Aguardando leituras de sinal…", W / 2, H / 2);
+    return;
+  }
+
+  const validHist = hist.filter(p => typeof p.v === "number" && !isNaN(p.v));
+  if (!validHist.length) return;
+
+  const X = i => pad.l + (i / 119) * plotW;
+  const off = Math.max(0, 120 - validHist.length);
+
+  // Se tiver só 1 ponto, desenha ponto inicial
+  if (validHist.length === 1) {
+    const pt = validHist[0];
+    const px = X(off), py = Y(pt.v);
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, Math.PI * 2);
+    ctx.fillStyle = "#4f8cff";
+    ctx.fill();
+    return;
+  }
+
+  // Preenchimento gradiente sob a linha
+  const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+  grad.addColorStop(0, "rgba(79,140,255,.35)");
+  grad.addColorStop(1, "rgba(79,140,255,0)");
+
+  ctx.beginPath();
+  validHist.forEach((p, i) => {
+    const x = X(i + off), y = Y(p.v);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  const lastX = X(validHist.length - 1 + off);
+  const firstX = X(off);
+  ctx.lineTo(lastX, H - pad.b);
+  ctx.lineTo(firstX, H - pad.b);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Linha traçada do sinal
+  ctx.beginPath();
+  validHist.forEach((p, i) => {
+    const x = X(i + off), y = Y(p.v);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = "#4f8cff";
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Ponto brilhante na leitura atual
+  const latest = validHist[validHist.length - 1];
+  const curX = X(validHist.length - 1 + off), curY = Y(latest.v);
+  ctx.beginPath();
+  ctx.arc(curX, curY, 5, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#4f8cff";
+  ctx.stroke();
 }
 function startBeep() {
   stopBeep(); audio = audio || new (window.AudioContext || window.webkitAudioContext)();

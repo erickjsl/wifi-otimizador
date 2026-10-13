@@ -5,13 +5,27 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: radial-gradient(1200px 600px at 10% -10%, #1a2550 0%, var(--bg) 60%); color: var(--text); min-height: 100vh; }
-header { display: flex; align-items: center; gap: 24px; padding: 14px 28px; background: rgba(11,16,32,.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; flex-wrap: wrap; }
-.brand { display: flex; align-items: center; gap: 10px; font-size: 19px; color: var(--accent); }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; background: rgba(11,16,32,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
+.header-top { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 19px; color: var(--accent); user-select: none; }
 .brand span { color: var(--text); }
-nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
-nav button { background: none; border: none; color: var(--muted); padding: 8px 14px; border-radius: 8px; font-size: 14px; cursor: pointer; }
-nav button:hover { color: var(--text); background: var(--panel2); }
-nav button.active { color: var(--text); background: var(--panel2); box-shadow: inset 0 -2px 0 var(--accent); }
+.menu-toggle { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; font-size: 20px; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; color: var(--text); cursor: pointer; }
+.menu-toggle:hover { border-color: var(--accent); }
+nav { display: none; width: 100%; gap: 6px; padding-top: 10px; border-top: 1px solid rgba(36,48,77,.5); flex-direction: column; }
+nav.open { display: flex; animation: fade .2s ease-out; }
+nav button { background: var(--panel2); border: 1px solid var(--line); color: var(--muted); padding: 10px 14px; border-radius: 8px; font-size: 14px; cursor: pointer; text-align: left; width: 100%; display: flex; align-items: center; gap: 8px; }
+nav button:hover { color: var(--text); background: var(--panel); border-color: var(--accent); }
+nav button.active { color: #fff; background: linear-gradient(90deg, rgba(79,140,255,.2), rgba(123,92,255,.1)); border-color: var(--accent); font-weight: 600; }
+nav button.cert-btn { border-color: rgba(79,140,255,.5); color: var(--accent); }
+@media (min-width: 900px) {
+  header { flex-wrap: nowrap; padding: 14px 28px; }
+  .header-top { width: auto; }
+  .menu-toggle { display: none; }
+  nav { display: flex !important; width: auto; flex-direction: row; padding-top: 0; border-top: none; flex: 1; margin: 0 16px; }
+  nav button { width: auto; background: none; border: none; text-align: center; padding: 8px 14px; }
+  nav button.active { background: var(--panel2); box-shadow: inset 0 -2px 0 var(--accent); }
+}
 button { font-family: inherit; background: var(--panel2); color: var(--text); border: 1px solid var(--line); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: .15s; }
 button:hover { border-color: var(--accent); }
 button:disabled { opacity: .5; cursor: wait; }
@@ -19,7 +33,8 @@ button.primary { background: linear-gradient(135deg, var(--accent), var(--accent
 button.primary:hover { filter: brightness(1.1); }
 input, select { font-family: inherit; background: var(--bg); color: var(--text); border: 1px solid var(--line); padding: 8px 10px; border-radius: 8px; font-size: 14px; }
 input { flex: 1; }
-main { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
+main { padding: 16px 18px; max-width: 1400px; margin: 0 auto; }
+@media (min-width: 768px) { main { padding: 24px 28px; } }
 .tab { display: none; } .tab.active { display: block; animation: fade .25s; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } }
 .grid { display: grid; gap: 18px; margin-bottom: 18px; }

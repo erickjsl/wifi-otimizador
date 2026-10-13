@@ -22,19 +22,24 @@
 </head>
 <body>
 <header>
-  <div class="brand">
-    <svg viewBox="0 0 24 24" width="28" height="28"><path fill="currentColor" d="M12 21l3.6-4.8a6 6 0 0 0-7.2 0L12 21zm0-18C7.95 3 4.21 4.34 1.2 6.6L3 9a15 15 0 0 1 18 0l1.8-2.4C19.79 4.34 16.05 3 12 3zm0 6c-2.7 0-5.19.89-7.2 2.4L6.6 13.8a9 9 0 0 1 10.8 0l1.8-2.4C17.19 9.89 14.7 9 12 9z"/></svg>
-    <span>Wi-Fi <b>Otimizador</b></span>
+  <div class="header-top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="28" height="28"><path fill="currentColor" d="M12 21l3.6-4.8a6 6 0 0 0-7.2 0L12 21zm0-18C7.95 3 4.21 4.34 1.2 6.6L3 9a15 15 0 0 1 18 0l1.8-2.4C19.79 4.34 16.05 3 12 3zm0 6c-2.7 0-5.19.89-7.2 2.4L6.6 13.8a9 9 0 0 1 10.8 0l1.8-2.4C17.19 9.89 14.7 9 12 9z"/></svg>
+      <span>CertiFi <b>Pro</b></span>
+    </div>
+    <div class="header-actions">
+      <button id="btnScan" class="primary scan-btn-header">⟳ Analisar</button>
+      <button id="btnToggleMenu" class="menu-toggle" aria-label="Menu de navegação">☰</button>
+    </div>
   </div>
-  <nav>
+  <nav id="mainNav">
     <button data-tab="overview" class="active">Visão geral</button>
     <button data-tab="channels">Redes &amp; canais</button>
     <button data-tab="signal">Buscar sinal</button>
     <button data-tab="tests">Testes</button>
     <button data-tab="optimize">Otimizar</button>
-    <button data-tab="certify" style="border: 1px solid var(--accent); color: var(--accent);">📜 Certificação</button>
+    <button data-tab="certify" class="cert-btn">📜 Certificação</button>
   </nav>
-  <button id="btnScan" class="primary">⟳ Analisar agora</button>
 </header>
 
 <div id="serverConfigBar" style="background: rgba(18,26,46,0.95); padding: 10px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; flex-wrap: wrap;">
