@@ -61,8 +61,12 @@ public class MainActivity extends Activity {
         s.setAllowContentAccess(true);
         s.setAllowFileAccessFromFileURLs(true);
         s.setAllowUniversalAccessFromFileURLs(true);
-        s.setMediaPlaybackRequiresUserGesture(false);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        s.setUseWideViewPort(true);
+        s.setLoadWithOverviewMode(true);
+        s.setSupportZoom(false);
+        s.setBuiltInZoomControls(false);
+        webView.setOverScrollMode(android.view.View.OVER_SCROLL_NEVER);
         webView.setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null);
         webView.setBackgroundColor(0xFF0B1020); // Cor de fundo escura nativa para prevenir flash branco
 
