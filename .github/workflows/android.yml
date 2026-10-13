@@ -1,0 +1,68 @@
+name: Build Android APK (CertiFi Pro)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Java JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.5'
+
+    - name: Sync web assets into the APK
+      run: cp -f static/* android-app/app/src/main/assets/
+
+    - name: Build Android APK
+      run: |
+        cd android-app
+        gradle assembleDebug --no-daemon --stacktrace
+        cp app/build/outputs/apk/debug/app-debug.apk ../CertiFiPro.apk
+
+    - name: Verify APK signature
+      run: |
+        APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner | sort -V | tail -1)
+        $APKSIGNER verify --print-certs CertiFiPro.apk | head -5
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: CertiFiPro-Android-APK
+        path: CertiFiPro.apk
+
+    - name: Publish GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v1.1.${{ github.run_number }}
+        name: CertiFi Pro v1.1.${{ github.run_number }} (Android)
+        make_latest: true
+        body: |
+          ### 📱 CertiFi Pro — App Android independente
+          **Não precisa de computador**: o app mede o Wi-Fi direto no celular.
+
+          **Instalação**
+          1. Baixe `CertiFiPro.apk` abaixo, no próprio celular.
+          2. Abra o arquivo e permita "Instalar apps desconhecidos" se o Android pedir.
+          3. Ao abrir, **permita a Localização** e deixe o **GPS ligado** (o Android exige isso para listar redes Wi-Fi).
+
+          Se tiver uma versão antiga (v1.0.0) instalada, desinstale-a uma vez antes. As próximas atualizações instalam por cima.
+        files: CertiFiPro.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

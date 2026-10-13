@@ -2,6 +2,9 @@ plugins {
     id 'com.android.application'
 }
 
+// Número do build vindo do GitHub Actions (garante que cada APK novo é uma atualização válida)
+def buildNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+
 android {
     namespace 'com.certifi.pro'
     compileSdk 34
@@ -10,13 +13,28 @@ android {
         applicationId "com.certifi.pro"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 100 + buildNumber
+        versionName "1.1." + buildNumber
+    }
+
+    // Chave FIXA: todo APK gerado é assinado igual, então instalar por cima de uma versão anterior funciona
+    signingConfigs {
+        fixed {
+            storeFile file("certifi.p12")
+            storePassword "certifipro"
+            keyAlias "certifi"
+            keyPassword "certifipro"
+            storeType "pkcs12"
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig signingConfigs.fixed
+        }
         release {
             minifyEnabled false
+            signingConfig signingConfigs.fixed
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -27,6 +45,4 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.11.0'
 }

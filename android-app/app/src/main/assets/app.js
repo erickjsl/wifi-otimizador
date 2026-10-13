@@ -20,6 +20,8 @@ function getApiBase() {
 }
 
 async function api(path, opts = {}) {
+  // Dentro do APK: mede direto no celular, sem PC
+  if (window.NativeAPI && window.NativeAPI.active()) return window.NativeAPI.handle(path, opts);
   const base = getApiBase();
   if (base === null && window.location.protocol === "file:") {
     throw new Error("🔌 Conecte ao seu PC: Digite o IP do computador no campo acima e clique em 'Conectar' ou 'Detectar IP'.");
@@ -47,8 +49,10 @@ function toast(msg, ms = 3500) {
 function loading(on, text = "Analisando…") {
   $("#loading").classList.toggle("hidden", !on); $("#loadingText").textContent = text;
 }
-function showError(msg) {
+function showError(msg, action) {
   const e = $("#error"); e.textContent = "⚠ " + msg; e.classList.toggle("hidden", !msg);
+  e.style.cursor = action ? "pointer" : "";
+  e.onclick = action ? () => { try { action(); } catch (x) { } } : null;
 }
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const sigColor = r => r >= -60 ? "var(--ok)" : r >= -70 ? "var(--warn)" : "var(--bad)";
@@ -74,7 +78,7 @@ async function scan() {
     if (DATA.current) BAND = DATA.current.band;
     $$("#bandSel button").forEach(x => x.classList.toggle("active", x.dataset.band === BAND));
     renderOverview(); renderTable(); drawCharts();
-  } catch (e) { showError(e.message); }
+  } catch (e) { showError(e.message, e.action); }
   finally { loading(false); $("#btnScan").disabled = false; }
 }
 $("#btnScan").onclick = scan;
@@ -220,6 +224,7 @@ window.addEventListener("resize", () => { drawCharts(); drawLive(); });
 let liveTimer = null, hist = [], audio = null, beepTimer = null, lastRssi = null;
 // ------------------------------------------------------------------ Notificações
 function requestNotificationPermission() {
+  if (window.AndroidWifi) return; // permissão já pedida pelo app nativo
   if ("Notification" in window && Notification.permission !== "granted") {
     Notification.requestPermission().then(perm => {
       if (perm === "granted") {
@@ -231,6 +236,7 @@ function requestNotificationPermission() {
 }
 
 function sendNotification(title, options = {}) {
+  if (window.AndroidWifi) { try { window.AndroidWifi.notify(title, options.body || ""); } catch (e) { } return; }
   if ("Notification" in window && Notification.permission === "granted") {
     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
       navigator.serviceWorker.ready.then(reg => {
@@ -319,8 +325,18 @@ $("#btnMark").onclick = async () => {
   let vals = hist.slice(-5).map(p => p.v);
   if (!vals.length) { try { const s = await api("/api/signal"); vals = [s.rssi]; } catch (e) { return toast(e.message); } }
   const v = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
-  rooms.push({ name, v }); localStorage.setItem("rooms", JSON.stringify(rooms)); $("#roomName").value = ""; renderRooms();
-  toast(`${name}: ${v} dBm registrado`);
+  const room = { name, v, band: DATA?.current?.band };
+  // No celular: mede latência e perda reais até o roteador neste ponto (usado na certificação)
+  if (window.NativeAPI && window.NativeAPI.active() && DATA?.net?.gateway) {
+    toast(`Medindo latência em "${name}"…`);
+    await new Promise(r => setTimeout(r, 30));
+    const p = window.NativeAPI.ping(DATA.net.gateway, 8);
+    if (p.avg != null) room.lat = p.avg;
+    room.loss = p.loss ?? 0;
+  }
+  rooms.push(room); localStorage.setItem("rooms", JSON.stringify(rooms)); $("#roomName").value = ""; renderRooms();
+  toast(`${name}: ${v} dBm${room.lat != null ? ` · ${room.lat} ms` : ""} registrado`);
+  updateCertSummary();
 };
 renderRooms();
 
@@ -431,9 +447,9 @@ $("#btnGenerateCert")?.addEventListener("click", async () => {
   const points = rooms.map(r => ({
     name: r.name,
     rssi: r.v,
-    latency_gw: DATA?.diagnosis?.scores?.sinal ? 15.0 : 25.0,
-    loss_gw: 0.0,
-    band: DATA?.current?.band || "2.4"
+    latency_gw: r.lat ?? null,
+    loss_gw: r.loss ?? 0.0,
+    band: r.band || DATA?.current?.band || "2.4"
   }));
   const slaProfile = $("#certSlaProfile").value;
 
@@ -576,6 +592,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+
+// ------------------------------------------------------------------ Modo celular (APK)
+if (window.NativeAPI && window.NativeAPI.active()) {
+  const bar = $("#serverConfigBar");
+  if (bar) bar.innerHTML = `<span>📱 <b>Medindo direto neste celular</b> — não precisa de computador</span>`;
+  window.onNativePermission = () => scan();
+}
 
 // ------------------------------------------------------------------ Início
 scan();
