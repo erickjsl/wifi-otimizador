@@ -83,6 +83,19 @@ public class MainActivity extends Activity {
                 try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception ignored) { }
                 return true;
             }
+
+            @Override
+            public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
+                // Previne a tela branca de crash com ícone triste: se o renderizador sofrer OOM ou falha de GPU, recria imediatamente
+                android.util.Log.e("CertiFiWeb", "Render process gone. Did crash: " + (detail != null && detail.didCrash()));
+                if (webView != null) {
+                    ((android.view.ViewGroup) webView.getParent()).removeView(webView);
+                    webView.destroy();
+                    webView = null;
+                }
+                recreate();
+                return true;
+            }
         });
 
         // Ponte nativa: o JavaScript chama window.AndroidWifi.*

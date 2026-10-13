@@ -322,110 +322,58 @@ async function pollSignal() {
 function drawLive() {
   if (!$("#tab-signal").classList.contains("active")) return;
   try {
-    const [ctx, W, H] = setupCanvas($("#liveCanvas"));
-    if (!ctx || W <= 0 || H <= 0) return;
-    ctx.clearRect(0, 0, W, H);
-  const pad = { l: 40, r: 16, t: 14, b: 24 };
-  const plotW = Math.max(10, W - pad.l - pad.r);
-  const plotH = Math.max(10, H - pad.t - pad.b);
-  const Y = v => pad.t + Math.max(0, Math.min(1, 1 - (v + 95) / 70)) * plotH;
+    const W = 600, H = 180;
+    const pad = { l: 44, r: 16, t: 14, b: 24 };
+    const plotW = W - pad.l - pad.r;
+    const plotH = H - pad.t - pad.b;
+    const Y = v => Math.round(pad.t + Math.max(0, Math.min(1, 1 - (v + 95) / 70)) * plotH);
 
-  // Fundo com zonas de qualidade de sinal
-  [[-25, -60, "rgba(34,197,94,.08)"], [-60, -70, "rgba(245,165,36,.08)"], [-70, -95, "rgba(239,68,68,.08)"]].forEach(([a, b, c]) => {
-    ctx.fillStyle = c;
-    const yTop = Y(a), yBottom = Y(b);
-    ctx.fillRect(pad.l, yTop, plotW, yBottom - yTop);
-  });
+    const lineEl = $("#svgSignalLine");
+    const fillEl = $("#svgFillArea");
+    const dotEl = $("#svgCurrentDot");
+    const hintEl = $("#svgEmptyHint");
 
-  // Grade e valores dBm
-  ctx.font = "11px Segoe UI, system-ui, sans-serif";
-  ctx.fillStyle = "#8b97b3";
-  ctx.strokeStyle = "rgba(36,48,77,.5)";
-  ctx.lineWidth = 1;
-  for (let d = -90; d <= -30; d += 15) {
-    const y = Y(d);
-    ctx.beginPath();
-    ctx.moveTo(pad.l, y);
-    ctx.lineTo(W - pad.r, y);
-    ctx.stroke();
-    ctx.fillText(`${d}`, 8, y + 4);
-  }
+    if (!lineEl || !fillEl || !dotEl) return;
 
-  // Linhas verticais de tempo (passado -> presente)
-  ctx.fillStyle = "#64748b";
-  ctx.textAlign = "center";
-  ctx.fillText("-2 min", pad.l, H - 8);
-  ctx.fillText("-1 min", pad.l + plotW * 0.5, H - 8);
-  ctx.fillText("Agora", pad.l + plotW, H - 8);
+    if (!hist.length) {
+      if (hintEl) hintEl.style.display = "block";
+      lineEl.setAttribute("points", "");
+      fillEl.setAttribute("points", "");
+      dotEl.setAttribute("cx", "-20");
+      dotEl.setAttribute("cy", "-20");
+      return;
+    }
 
-  // Se não tiver pontos ainda, exibe dica
-  if (!hist.length) {
-    ctx.fillStyle = "#8b97b3";
-    ctx.font = "13px Segoe UI, system-ui, sans-serif";
-    ctx.fillText("Iniciando medição em tempo real…", W / 2, H / 2);
-    return;
-  }
+    if (hintEl) hintEl.style.display = "none";
 
-  const validHist = hist.filter(p => typeof p.v === "number" && !isNaN(p.v));
-  if (!validHist.length) return;
+    const validHist = hist.filter(p => typeof p.v === "number" && !isNaN(p.v));
+    if (!validHist.length) return;
 
-  // X preenche da esquerda para a direita (0 a N pontos). Se atingir 120 pontos, percorre toda a largura.
-  const maxPoints = Math.max(120, validHist.length);
-  const X = i => pad.l + (i / (maxPoints - 1)) * plotW;
+    const maxPoints = Math.max(120, validHist.length);
+    const X = i => Math.round(pad.l + (i / (maxPoints - 1)) * plotW);
 
-  // Se tiver só 1 ponto
-  if (validHist.length === 1) {
-    const pt = validHist[0];
-    const px = X(0), py = Y(pt.v);
-    ctx.beginPath();
-    ctx.arc(px, py, 6, 0, Math.PI * 2);
-    ctx.fillStyle = "#4f8cff";
-    ctx.fill();
-    return;
-  }
+    if (validHist.length === 1) {
+      const px = X(0), py = Y(validHist[0].v);
+      lineEl.setAttribute("points", `${px},${py}`);
+      fillEl.setAttribute("points", "");
+      dotEl.setAttribute("cx", px);
+      dotEl.setAttribute("cy", py);
+      return;
+    }
 
-  // Preenchimento gradiente sob a linha
-  const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
-  grad.addColorStop(0, "rgba(79,140,255,.35)");
-  grad.addColorStop(1, "rgba(79,140,255,0)");
+    const pts = validHist.map((p, i) => `${X(i)},${Y(p.v)}`);
+    lineEl.setAttribute("points", pts.join(" "));
 
-  ctx.beginPath();
-  validHist.forEach((p, i) => {
-    const x = X(i), y = Y(p.v);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  const lastX = X(validHist.length - 1);
-  const firstX = X(0);
-  ctx.lineTo(lastX, H - pad.b);
-  ctx.lineTo(firstX, H - pad.b);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
+    const firstX = X(0), lastX = X(validHist.length - 1);
+    const bottomY = H - pad.b;
+    const fillPts = [...pts, `${lastX},${bottomY}`, `${firstX},${bottomY}`];
+    fillEl.setAttribute("points", fillPts.join(" "));
 
-  // Linha traçada do sinal
-  ctx.beginPath();
-  validHist.forEach((p, i) => {
-    const x = X(i), y = Y(p.v);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.strokeStyle = "#4f8cff";
-  ctx.lineWidth = 2.5;
-  ctx.stroke();
-
-  // Ponto brilhante na leitura atual (ponta da linha à direita)
-  const latest = validHist[validHist.length - 1];
-  const curX = X(validHist.length - 1), curY = Y(latest.v);
-  ctx.beginPath();
-  ctx.arc(curX, curY, 6, 0, Math.PI * 2);
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
-  ctx.lineWidth = 2.5;
-  ctx.strokeStyle = "#4f8cff";
-  ctx.stroke();
+    const lastPt = validHist[validHist.length - 1];
+    dotEl.setAttribute("cx", lastX);
+    dotEl.setAttribute("cy", Y(lastPt.v));
   } catch (err) {
-    console.warn("drawLive error:", err);
+    console.warn("drawLive SVG error:", err);
   }
 }
 function startBeep() {
