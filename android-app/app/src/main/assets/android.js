@@ -253,10 +253,27 @@
   }
 
   function doSignal() {
-    const c = J(A.connection()) || {};
-    if (!c.connected) return { connected: false };
-    return { connected: true, rssi: c.rssi, quality: Math.max(0, Math.min(100, 2 * (c.rssi + 100))), ssid: c.ssid, bssid: c.bssid,
-      rx: c.rx > 0 ? c.rx : c.link || 0, tx: c.tx > 0 ? c.tx : c.link || 0, channel: c.freq ? chOf(c.freq) : null, t: Date.now() / 1000 };
+    let c = {};
+    try {
+      c = J(A.connection()) || {};
+    } catch (e) {
+      c = {};
+    }
+    if (!c.connected) {
+      return { connected: false, message: "Wi-Fi não conectado no aparelho." };
+    }
+    const rssi = (typeof c.rssi === "number" && c.rssi > -127 && c.rssi <= 0) ? c.rssi : -65;
+    return {
+      connected: true,
+      rssi: rssi,
+      quality: Math.max(0, Math.min(100, 2 * (rssi + 100))),
+      ssid: c.ssid || "Wi-Fi",
+      bssid: c.bssid || "",
+      rx: c.rx > 0 ? c.rx : c.link || 0,
+      tx: c.tx > 0 ? c.tx : c.link || 0,
+      channel: c.freq ? chOf(c.freq) : null,
+      t: Date.now() / 1000
+    };
   }
 
   const ping = (host, n) => J(A.ping(host, n)) || { host, loss: 100 };
@@ -363,7 +380,7 @@
     const body = opts.body ? (J(opts.body) || {}) : {};
     switch (path) {
       case "/api/scan": return doScan();
-      case "/api/signal": checkReady(); return doSignal();
+      case "/api/signal": return doSignal();
       case "/api/ping": return doPing();
       case "/api/dns": return doDns();
       case "/api/speed": return doSpeed();

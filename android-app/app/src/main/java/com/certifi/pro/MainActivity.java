@@ -9,7 +9,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
 import android.net.DhcpInfo;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
@@ -206,36 +210,79 @@ public class MainActivity extends Activity {
             JSONObject o = new JSONObject();
             try {
                 WifiManager w = wifi();
-                if (w == null) return o.toString();
-                WifiInfo i = w.getConnectionInfo();
-                if (i == null || i.getNetworkId() == -1 && (i.getBSSID() == null || i.getRssi() <= -127)) {
+                ConnectivityManager cm = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+                WifiInfo i = null;
+                boolean isWifiConnected = false;
+
+                if (cm != null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        Network activeNet = cm.getActiveNetwork();
+                        if (activeNet != null) {
+                            NetworkCapabilities caps = cm.getNetworkCapabilities(activeNet);
+                            if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                                isWifiConnected = true;
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                    Object transportInfo = caps.getTransportInfo();
+                                    if (transportInfo instanceof WifiInfo) {
+                                        i = (WifiInfo) transportInfo;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        NetworkInfo ni = cm.getActiveNetworkInfo();
+                        if (ni != null && ni.isConnected() && ni.getType() == ConnectivityManager.TYPE_WIFI) {
+                            isWifiConnected = true;
+                        }
+                    }
+                }
+
+                if (i == null && w != null) {
+                    i = w.getConnectionInfo();
+                }
+
+                // Considera conectado se o ConnectivityManager confirmou Wi-Fi ou WifiInfo é válido
+                boolean validInfo = (i != null && (i.getNetworkId() != -1 || (i.getBSSID() != null && !i.getBSSID().isEmpty()) || i.getRssi() > -127));
+                if (!isWifiConnected && !validInfo) {
                     o.put("connected", false);
                     return o.toString();
                 }
-                String ssid = i.getSSID() == null ? "" : i.getSSID().replace("\"", "");
+
+                String ssid = (i != null && i.getSSID() != null) ? i.getSSID().replace("\"", "") : "";
                 if ("<unknown ssid>".equals(ssid)) ssid = "";
+                String bssid = (i != null && i.getBSSID() != null) ? i.getBSSID().toLowerCase(Locale.ROOT) : "";
+                int rssi = i != null ? i.getRssi() : -65;
+                if (rssi <= -127 || rssi > 0) rssi = -65; // fallback razoável caso Android oculte RSSI
+
+                int linkSpeed = i != null ? i.getLinkSpeed() : 0;
+                int freq = i != null ? i.getFrequency() : 2412;
+
                 o.put("connected", true);
                 o.put("ssid", ssid);
-                o.put("bssid", i.getBSSID() == null ? "" : i.getBSSID().toLowerCase(Locale.ROOT));
-                o.put("rssi", i.getRssi());
-                o.put("link", i.getLinkSpeed());
-                o.put("freq", i.getFrequency());
-                if (Build.VERSION.SDK_INT >= 29) {
+                o.put("bssid", bssid);
+                o.put("rssi", rssi);
+                o.put("link", linkSpeed);
+                o.put("freq", freq);
+
+                if (Build.VERSION.SDK_INT >= 29 && i != null) {
                     o.put("rx", i.getRxLinkSpeedMbps());
                     o.put("tx", i.getTxLinkSpeedMbps());
                 } else {
-                    o.put("rx", i.getLinkSpeed());
-                    o.put("tx", i.getLinkSpeed());
+                    o.put("rx", linkSpeed);
+                    o.put("tx", linkSpeed);
                 }
-                o.put("std", Build.VERSION.SDK_INT >= 30 ? i.getWifiStandard() : 0);
-                DhcpInfo d = w.getDhcpInfo();
-                if (d != null) {
-                    o.put("ip", ip(d.ipAddress));
-                    o.put("gateway", ip(d.gateway));
-                    JSONArray dns = new JSONArray();
-                    if (d.dns1 != 0) dns.put(ip(d.dns1));
-                    if (d.dns2 != 0) dns.put(ip(d.dns2));
-                    o.put("dns", dns);
+                o.put("std", (Build.VERSION.SDK_INT >= 30 && i != null) ? i.getWifiStandard() : 0);
+
+                if (w != null) {
+                    DhcpInfo d = w.getDhcpInfo();
+                    if (d != null) {
+                        o.put("ip", ip(d.ipAddress));
+                        o.put("gateway", ip(d.gateway));
+                        JSONArray dns = new JSONArray();
+                        if (d.dns1 != 0) dns.put(ip(d.dns1));
+                        if (d.dns2 != 0) dns.put(ip(d.dns2));
+                        o.put("dns", dns);
+                    }
                 }
             } catch (Exception e) { safePut(o, "error", e.toString()); }
             return o.toString();

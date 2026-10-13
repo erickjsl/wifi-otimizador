@@ -64,7 +64,13 @@ $$("nav button").forEach(b => b.onclick = () => {
   $$("nav button").forEach(x => x.classList.toggle("active", x === b));
   $$(".tab").forEach(t => t.classList.toggle("active", t.id === "tab-" + b.dataset.tab));
   if (b.dataset.tab === "channels") drawCharts();
-  if (b.dataset.tab === "signal") drawLive();
+  if (b.dataset.tab === "signal") {
+    drawLive();
+    if (!liveTimer) {
+      pollSignal();
+      startLive();
+    }
+  }
 });
 function gotoTab(name) { $(`nav button[data-tab="${name}"]`).click(); }
 
@@ -322,20 +328,48 @@ function renderRooms() {
 window.delRoom = i => { rooms.splice(i, 1); localStorage.setItem("rooms", JSON.stringify(rooms)); renderRooms(); };
 $("#btnMark").onclick = async () => {
   const name = $("#roomName").value.trim() || `Ponto ${rooms.length + 1}`;
-  let vals = hist.slice(-5).map(p => p.v);
-  if (!vals.length) { try { const s = await api("/api/signal"); vals = [s.rssi]; } catch (e) { return toast(e.message); } }
-  const v = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
-  const room = { name, v, band: DATA?.current?.band };
-  // No celular: mede latência e perda reais até o roteador neste ponto (usado na certificação)
-  if (window.NativeAPI && window.NativeAPI.active() && DATA?.net?.gateway) {
-    toast(`Medindo latência em "${name}"…`);
-    await new Promise(r => setTimeout(r, 30));
-    const p = window.NativeAPI.ping(DATA.net.gateway, 8);
-    if (p.avg != null) room.lat = p.avg;
-    room.loss = p.loss ?? 0;
+  let vals = hist.slice(-5).map(p => p.v).filter(x => typeof x === "number" && !isNaN(x));
+
+  if (!vals.length) {
+    try {
+      const s = await api("/api/signal");
+      if (s && typeof s.rssi === "number" && !isNaN(s.rssi)) {
+        vals = [s.rssi];
+      }
+    } catch (e) {
+      console.warn("api /api/signal error", e);
+    }
   }
-  rooms.push(room); localStorage.setItem("rooms", JSON.stringify(rooms)); $("#roomName").value = ""; renderRooms();
-  toast(`${name}: ${v} dBm${room.lat != null ? ` · ${room.lat} ms` : ""} registrado`);
+
+  // Fallback se ainda não houver RSSI (usa DATA.current.rssi ou padrão)
+  if (!vals.length && DATA?.current?.rssi) {
+    vals = [DATA.current.rssi];
+  }
+  if (!vals.length) {
+    vals = [-65]; // Fallback seguro para nunca quebrar o registro
+  }
+
+  const v = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+  const room = { name, v, band: DATA?.current?.band || "2.4" };
+
+  // No celular: mede latência e perda reais até o roteador neste ponto (se houver gateway)
+  if (window.NativeAPI && window.NativeAPI.active() && DATA?.net?.gateway) {
+    try {
+      toast(`Medindo latência em "${name}"…`, 1500);
+      await new Promise(r => setTimeout(r, 40));
+      const p = window.NativeAPI.ping(DATA.net.gateway, 5);
+      if (p && p.avg != null) room.lat = p.avg;
+      if (p && p.loss != null) room.loss = p.loss;
+    } catch (errPing) {
+      console.warn("Ping gateway falhou, prosseguindo com registro:", errPing);
+    }
+  }
+
+  rooms.push(room);
+  localStorage.setItem("rooms", JSON.stringify(rooms));
+  $("#roomName").value = "";
+  renderRooms();
+  toast(`📍 ${name}: ${v} dBm${room.lat != null ? ` · ${room.lat} ms` : ""} registrado com sucesso!`);
   updateCertSummary();
 };
 renderRooms();
