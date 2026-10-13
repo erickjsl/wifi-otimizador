@@ -122,21 +122,29 @@
           <label class="chk"><input type="checkbox" id="chkSound"> Som (bipe guia)</label>
         </div>
       </div>
-      <div class="card span2">
-        <h3>Histórico (últimos 2 min)</h3>
-        <canvas id="liveCanvas" height="220"></canvas>
-        <p class="muted small">Caminhe devagar com o notebook ou mova o roteador/repetidor. Com o som ligado, o bipe fica mais agudo e rápido quando o sinal melhora.</p>
+      <div class="card span2" style="border: 2px solid var(--accent); background: linear-gradient(180deg, #162444, #101932);">
+        <div class="row between">
+          <h3 style="color:#60a5fa;margin-bottom:6px">📍 Registrar Cômodo / Ponto para Certificação</h3>
+          <span class="pill" style="color:#22c55e;border-color:rgba(34,197,94,0.4)">Passo essencial</span>
+        </div>
+        <p class="muted small" style="margin-top:0">Fique cerca de 5 s no cômodo e toque no botão abaixo para salvar a medição para o laudo:</p>
+        <div class="row gap" style="margin-top:10px">
+          <input id="roomName" placeholder="Ex.: Sala, Quarto Casal, Cozinha, Escritório…" style="font-size:15px;padding:10px 14px">
+          <button id="btnMark" class="primary" style="font-size:15px;padding:10px 18px;white-space:nowrap">📍 Gravar Local</button>
+        </div>
+        <div class="table-wrap mt">
+          <table id="roomTable"><thead><tr><th>Local Gravado</th><th>Média Sinal</th><th>Qualidade</th><th>Ação</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="row gap mt" style="justify-content:flex-end">
+          <button onclick="gotoTab('certify')" class="cert-btn" style="padding:6px 14px;font-size:13px">Ir para emissão do Certificado →</button>
+        </div>
       </div>
     </div>
     <div class="grid g2">
       <div class="card">
-        <h3>Mapa de cobertura por cômodo</h3>
-        <div class="row gap">
-          <input id="roomName" placeholder="Ex.: Sala, Quarto, Escritório…">
-          <button id="btnMark">📍 Registrar ponto</button>
-        </div>
-        <p class="muted small">Fique 5 s parado no local antes de registrar (usa a média dos últimos 5 s).</p>
-        <table id="roomTable" class="mt"><thead><tr><th>Local</th><th>Média</th><th>Qualidade</th><th></th></tr></thead><tbody></tbody></table>
+        <h3>Histórico em tempo real (últimos 2 min)</h3>
+        <canvas id="liveCanvas" height="200"></canvas>
+        <p class="muted small">Caminhe devagar pelo ambiente para verificar oscilações de sinal.</p>
       </div>
       <div class="card">
         <h3>Guia de níveis</h3>
@@ -222,9 +230,16 @@
 
       <div class="card">
         <h3>Pontos Auditados para Certificação</h3>
-        <p class="muted small">O relatório utilizará os pontos médios registrados na aba "Buscar Sinal".</p>
-        <div id="certPointsSummary" class="mt"></div>
-        <button onclick="gotoTab('signal')" class="mt">📍 Adicionar mais pontos no local →</button>
+        <p class="muted small">Grave os cômodos medidos diretamente aqui ou na aba "Buscar sinal":</p>
+        <div class="row gap mt" style="margin-bottom:12px">
+          <input id="certRoomName" placeholder="Ex.: Sala, Quarto, Varanda…">
+          <button id="btnCertMarkPoint" class="primary" style="white-space:nowrap">📍 Gravar Este Local</button>
+        </div>
+        <div id="certPointsSummary" class="table-wrap mt"></div>
+        <div class="row gap mt" style="justify-content:space-between">
+          <button onclick="gotoTab('signal')">📡 Ver medidor de sinal ao vivo →</button>
+          <button id="btnClearRooms" style="color:var(--bad)">Limpar todos</button>
+        </div>
       </div>
     </div>
 

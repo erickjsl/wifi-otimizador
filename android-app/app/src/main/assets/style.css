@@ -82,7 +82,7 @@ a { color: var(--accent); }
 .cfg-group td:first-child { color: var(--muted); width: 45%; }
 .tips { padding-left: 18px; margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
 
-canvas { width: 100%; display: block; }
+canvas { width: 100%; display: block; background: #0c1222; border: 1px solid var(--line); border-radius: 10px; }
 .seg { display: flex; background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 3px; }
 .seg button { border: none; background: none; padding: 6px 12px; }
 .seg button.active { background: var(--panel2); color: var(--text); }

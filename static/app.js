@@ -173,16 +173,24 @@ $$("#bandSel button").forEach(b => b.onclick = () => {
 });
 function setupCanvas(cv) {
   if (!cv) return [null, 0, 0];
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2); // limita dpr para não estourar memória da GPU no Android
   const rect = cv.getBoundingClientRect();
-  const parentWidth = cv.parentElement ? cv.parentElement.clientWidth - 40 : 300;
+  const parentWidth = cv.parentElement ? cv.parentElement.clientWidth - 20 : 300;
   const w = Math.max(100, Math.floor(cv.clientWidth || rect.width || parentWidth || 300));
-  const h = +cv.getAttribute("height") || 220;
-  cv.width = Math.floor(w * dpr);
-  cv.height = Math.floor(h * dpr);
-  cv.style.height = h + "px";
+  const h = +cv.getAttribute("height") || 200;
+  const targetW = Math.floor(w * dpr);
+  const targetH = Math.floor(h * dpr);
+
+  if (cv.width !== targetW || cv.height !== targetH) {
+    cv.width = targetW;
+    cv.height = targetH;
+    cv.style.height = h + "px";
+  }
+
   const ctx = cv.getContext("2d");
-  if (ctx) ctx.scale(dpr, dpr);
+  if (ctx) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
   return [ctx, w, h];
 }
 const chFreq = (b, ch) => b === "2.4" ? (ch === 14 ? 2484 : 2407 + 5 * ch) : b === "5" ? 5000 + 5 * ch : 5950 + 5 * ch;
@@ -313,8 +321,10 @@ async function pollSignal() {
 }
 function drawLive() {
   if (!$("#tab-signal").classList.contains("active")) return;
-  const [ctx, W, H] = setupCanvas($("#liveCanvas"));
-  if (!ctx || W <= 0 || H <= 0) return;
+  try {
+    const [ctx, W, H] = setupCanvas($("#liveCanvas"));
+    if (!ctx || W <= 0 || H <= 0) return;
+    ctx.clearRect(0, 0, W, H);
   const pad = { l: 40, r: 16, t: 14, b: 24 };
   const plotW = Math.max(10, W - pad.l - pad.r);
   const plotH = Math.max(10, H - pad.t - pad.b);
@@ -406,6 +416,9 @@ function drawLive() {
   ctx.lineWidth = 2;
   ctx.strokeStyle = "#4f8cff";
   ctx.stroke();
+  } catch (err) {
+    console.warn("drawLive error:", err);
+  }
 }
 function startBeep() {
   stopBeep(); audio = audio || new (window.AudioContext || window.webkitAudioContext)();
@@ -432,8 +445,9 @@ function renderRooms() {
     || `<tr><td colspan="4" class="muted">Nenhum ponto registrado.</td></tr>`;
 }
 window.delRoom = i => { rooms.splice(i, 1); localStorage.setItem("rooms", JSON.stringify(rooms)); renderRooms(); };
-$("#btnMark").onclick = async () => {
-  const name = $("#roomName").value.trim() || `Ponto ${rooms.length + 1}`;
+async function recordPoint(nameInputId) {
+  const inputEl = $(nameInputId);
+  const name = (inputEl ? inputEl.value.trim() : "") || `Ponto ${rooms.length + 1}`;
   let vals = hist.slice(-5).map(p => p.v).filter(x => typeof x === "number" && !isNaN(x));
 
   if (!vals.length) {
@@ -473,11 +487,24 @@ $("#btnMark").onclick = async () => {
 
   rooms.push(room);
   localStorage.setItem("rooms", JSON.stringify(rooms));
-  $("#roomName").value = "";
+  if (inputEl) inputEl.value = "";
   renderRooms();
-  toast(`📍 ${name}: ${v} dBm${room.lat != null ? ` · ${room.lat} ms` : ""} registrado com sucesso!`);
   updateCertSummary();
-};
+  toast(`📍 ${name}: ${v} dBm${room.lat != null ? ` · ${room.lat} ms` : ""} registrado com sucesso!`);
+}
+
+$("#btnMark").onclick = () => recordPoint("#roomName");
+$("#btnCertMarkPoint") && ($("#btnCertMarkPoint").onclick = () => recordPoint("#certRoomName"));
+$("#btnClearRooms") && ($("#btnClearRooms").onclick = () => {
+  if (!rooms.length) return toast("Nenhum ponto para remover.");
+  if (confirm("Remover todos os pontos gravados?")) {
+    rooms.length = 0;
+    localStorage.setItem("rooms", JSON.stringify(rooms));
+    renderRooms();
+    updateCertSummary();
+    toast("Lista de pontos limpa!");
+  }
+});
 renderRooms();
 
 // ------------------------------------------------------------------ Testes
