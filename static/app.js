@@ -337,7 +337,7 @@ function drawLive() {
     ctx.fillRect(pad.l, yTop, plotW, yBottom - yTop);
   });
 
-  // Linhas de grade e valores dBm
+  // Grade e valores dBm
   ctx.font = "11px Segoe UI, system-ui, sans-serif";
   ctx.fillStyle = "#8b97b3";
   ctx.strokeStyle = "rgba(36,48,77,.5)";
@@ -351,26 +351,34 @@ function drawLive() {
     ctx.fillText(`${d}`, 8, y + 4);
   }
 
+  // Linhas verticais de tempo (passado -> presente)
+  ctx.fillStyle = "#64748b";
+  ctx.textAlign = "center";
+  ctx.fillText("-2 min", pad.l, H - 8);
+  ctx.fillText("-1 min", pad.l + plotW * 0.5, H - 8);
+  ctx.fillText("Agora", pad.l + plotW, H - 8);
+
   // Se não tiver pontos ainda, exibe dica
   if (!hist.length) {
     ctx.fillStyle = "#8b97b3";
-    ctx.textAlign = "center";
-    ctx.fillText("Aguardando leituras de sinal…", W / 2, H / 2);
+    ctx.font = "13px Segoe UI, system-ui, sans-serif";
+    ctx.fillText("Iniciando medição em tempo real…", W / 2, H / 2);
     return;
   }
 
   const validHist = hist.filter(p => typeof p.v === "number" && !isNaN(p.v));
   if (!validHist.length) return;
 
-  const X = i => pad.l + (i / 119) * plotW;
-  const off = Math.max(0, 120 - validHist.length);
+  // X preenche da esquerda para a direita (0 a N pontos). Se atingir 120 pontos, percorre toda a largura.
+  const maxPoints = Math.max(120, validHist.length);
+  const X = i => pad.l + (i / (maxPoints - 1)) * plotW;
 
-  // Se tiver só 1 ponto, desenha ponto inicial
+  // Se tiver só 1 ponto
   if (validHist.length === 1) {
     const pt = validHist[0];
-    const px = X(off), py = Y(pt.v);
+    const px = X(0), py = Y(pt.v);
     ctx.beginPath();
-    ctx.arc(px, py, 5, 0, Math.PI * 2);
+    ctx.arc(px, py, 6, 0, Math.PI * 2);
     ctx.fillStyle = "#4f8cff";
     ctx.fill();
     return;
@@ -383,12 +391,12 @@ function drawLive() {
 
   ctx.beginPath();
   validHist.forEach((p, i) => {
-    const x = X(i + off), y = Y(p.v);
+    const x = X(i), y = Y(p.v);
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
-  const lastX = X(validHist.length - 1 + off);
-  const firstX = X(off);
+  const lastX = X(validHist.length - 1);
+  const firstX = X(0);
   ctx.lineTo(lastX, H - pad.b);
   ctx.lineTo(firstX, H - pad.b);
   ctx.closePath();
@@ -398,7 +406,7 @@ function drawLive() {
   // Linha traçada do sinal
   ctx.beginPath();
   validHist.forEach((p, i) => {
-    const x = X(i + off), y = Y(p.v);
+    const x = X(i), y = Y(p.v);
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
@@ -406,14 +414,14 @@ function drawLive() {
   ctx.lineWidth = 2.5;
   ctx.stroke();
 
-  // Ponto brilhante na leitura atual
+  // Ponto brilhante na leitura atual (ponta da linha à direita)
   const latest = validHist[validHist.length - 1];
-  const curX = X(validHist.length - 1 + off), curY = Y(latest.v);
+  const curX = X(validHist.length - 1), curY = Y(latest.v);
   ctx.beginPath();
-  ctx.arc(curX, curY, 5, 0, Math.PI * 2);
+  ctx.arc(curX, curY, 6, 0, Math.PI * 2);
   ctx.fillStyle = "#ffffff";
   ctx.fill();
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2.5;
   ctx.strokeStyle = "#4f8cff";
   ctx.stroke();
   } catch (err) {

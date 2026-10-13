@@ -110,6 +110,7 @@
 
   <!-- BUSCAR SINAL -->
   <section id="tab-signal" class="tab">
+    <!-- 1. Linha do Sinal ao Vivo e Histórico Horizontal (Lado a Lado ou Tela Inteira) -->
     <div class="grid g3">
       <div class="card center">
         <h3>Sinal ao vivo</h3>
@@ -122,14 +123,26 @@
           <label class="chk"><input type="checkbox" id="chkSound"> Som (bipe guia)</label>
         </div>
       </div>
-      <div class="card span2" style="border: 2px solid var(--accent); background: linear-gradient(180deg, #162444, #101932);">
+      <div class="card span2">
         <div class="row between">
-          <h3 style="color:#60a5fa;margin-bottom:6px">📍 Registrar Cômodo / Ponto para Certificação</h3>
-          <span class="pill" style="color:#22c55e;border-color:rgba(34,197,94,0.4)">Passo essencial</span>
+          <h3>Histórico em tempo real (últimos 2 min)</h3>
+          <span class="muted small" style="font-size:11px">Oscilação horizontal ⇆</span>
         </div>
-        <p class="muted small" style="margin-top:0">Fique cerca de 5 s no cômodo e toque no botão abaixo para salvar a medição para o laudo:</p>
+        <canvas id="liveCanvas" height="180" style="width:100%;min-height:160px;"></canvas>
+        <p class="muted small" style="margin-top:6px">O gráfico avança para a direita continuamente a cada segundo conforme você caminha pelo ambiente.</p>
+      </div>
+    </div>
+
+    <!-- 2. Linha de Registro de Cômodos para o Laudo -->
+    <div class="grid g2">
+      <div class="card" style="border: 2px solid var(--accent); background: linear-gradient(180deg, #162444, #101932);">
+        <div class="row between">
+          <h3 style="color:#60a5fa;margin-bottom:6px">📍 Registrar Cômodo / Ponto para Laudo</h3>
+          <span class="pill" style="color:#22c55e;border-color:rgba(34,197,94,0.4)">Auditado</span>
+        </div>
+        <p class="muted small" style="margin-top:0">Fique cerca de 5 s no cômodo e toque para salvar a medição atual:</p>
         <div class="row gap" style="margin-top:10px">
-          <input id="roomName" placeholder="Ex.: Sala, Quarto Casal, Cozinha, Escritório…" style="font-size:15px;padding:10px 14px">
+          <input id="roomName" placeholder="Ex.: Sala, Quarto Casal, Cozinha…" style="font-size:15px;padding:10px 14px">
           <button id="btnMark" class="primary" style="font-size:15px;padding:10px 18px;white-space:nowrap">📍 Gravar Local</button>
         </div>
         <div class="table-wrap mt">
@@ -139,15 +152,8 @@
           <button onclick="gotoTab('certify')" class="cert-btn" style="padding:6px 14px;font-size:13px">Ir para emissão do Certificado →</button>
         </div>
       </div>
-    </div>
-    <div class="grid g2">
       <div class="card">
-        <h3>Histórico em tempo real (últimos 2 min)</h3>
-        <canvas id="liveCanvas" height="200"></canvas>
-        <p class="muted small">Caminhe devagar pelo ambiente para verificar oscilações de sinal.</p>
-      </div>
-      <div class="card">
-        <h3>Guia de níveis</h3>
+        <h3>Guia de níveis de sinal</h3>
         <table class="levels">
           <tr><td><span class="dot ok"></span> −30 a −50 dBm</td><td>Excelente — máximo desempenho</td></tr>
           <tr><td><span class="dot ok"></span> −50 a −60 dBm</td><td>Muito bom — 4K, jogos, chamadas</td></tr>
@@ -156,7 +162,7 @@
           <tr><td><span class="dot bad"></span> −70 a −80 dBm</td><td>Fraco — lento, instável</td></tr>
           <tr><td><span class="dot bad"></span> abaixo de −80</td><td>Péssimo — quedas constantes</td></tr>
         </table>
-        <p class="muted small">Dica: se vários cômodos ficarem abaixo de −67 dBm, a melhor solução é um sistema Mesh ou um segundo ponto de acesso ligado por cabo.</p>
+        <p class="muted small">Dica: se vários cômodos ficarem abaixo de −67 dBm, instale um repetidor ou sistema Mesh.</p>
       </div>
     </div>
   </section>
