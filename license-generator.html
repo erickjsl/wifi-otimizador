@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CertiFi Pro — Gerador de Licenças Offline</title>
+  <style>
+    :root {
+      --bg: #090e1a;
+      --card: #121a2e;
+      --card-border: #1e293b;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --success: #22c55e;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --line: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 16px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .header h1 {
+      font-size: 26px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .header p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(34,197,94,0.15);
+      color: var(--success);
+      border: 1px solid var(--success);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .card h2 {
+      font-size: 17px;
+      color: var(--accent);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    input, textarea {
+      width: 100%;
+      background: #090e1a;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+    .btn {
+      background: var(--accent);
+      color: #04101e;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 15px;
+      cursor: pointer;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      background: var(--accent-hover);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid var(--line);
+      margin-top: 8px;
+    }
+    .btn-secondary:hover {
+      background: #334155;
+      color: #fff;
+    }
+    .key-box {
+      background: #060a14;
+      border: 2px dashed var(--success);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      margin: 16px 0;
+    }
+    .key-display {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--success);
+      letter-spacing: 2px;
+      word-break: break-all;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--success);
+      color: #052e16;
+      font-weight: bold;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+      z-index: 99;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1><span>🔐</span> CertiFi Pro — Gerador de Licenças</h1>
+    <p>Painel Administrativo Offline para Ativação e Venda Direta</p>
+    <span class="badge">100% OFFLINE • CRIPTOGRAFIA SHA-256 • TRAVA DE APARELHO</span>
+  </div>
+
+  <div class="card">
+    <h2><span>⚡</span> Gerar Nova Chave</h2>
+    <div class="form-group">
+      <label for="inputDevId">ID do Aparelho do Cliente (copiado do app):</label>
+      <input id="inputDevId" placeholder="Ex: 9F482D1B3C00AA12" autocomplete="off" autofocus>
+    </div>
+    <div class="row">
+      <div class="form-group" style="flex: 1;">
+        <label for="inputClientName">Nome do Técnico / Empresa (opcional):</label>
+        <input id="inputClientName" placeholder="Ex: Lucas / Provedor TurboNet">
+      </div>
+      <div class="form-group" style="flex: 1;">
+        <label for="inputValue">Valor Cobrado (opcional):</label>
+        <input id="inputValue" placeholder="Ex: R$ 97,00">
+      </div>
+    </div>
+
+    <button id="btnGenerate" class="btn">🔑 Gerar Chave de Ativação Vitalícia</button>
+
+    <div id="resultArea" style="display: none; margin-top: 16px;">
+      <div class="key-box">
+        <label style="color: var(--muted); margin-bottom: 4px;">CHAVE EXCLUSIVA DESTE APARELHO:</label>
+        <div id="keyDisplay" class="key-display">CP-XXXX-XXXX-XXXX</div>
+      </div>
+
+      <button id="btnCopyKeyOnly" class="btn">📋 Copiar Apenas a Chave</button>
+
+      <div class="form-group" style="margin-top: 16px;">
+        <label for="msgPreview">Mensagem formatada pronta para enviar no WhatsApp:</label>
+        <textarea id="msgPreview" rows="8" style="font-size: 13px;"></textarea>
+      </div>
+
+      <button id="btnCopyMessage" class="btn btn-secondary">💬 Copiar Mensagem Completa para WhatsApp</button>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO LOCAL -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h2 style="margin: 0;"><span>📜</span> Histórico de Licenças Emitidas</h2>
+      <button id="btnClearHistory" style="background: none; border: none; color: #ef4444; font-size: 12px; cursor: pointer;">Limpar histórico</button>
+    </div>
+    <div class="table-wrap">
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Cliente</th>
+            <th>ID Aparelho</th>
+            <th>Chave</th>
+            <th>Valor</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr><td colspan="5" style="color: var(--muted); text-align: center;">Nenhuma chave gerada ainda.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- COMO FUNCIONA -->
+  <div class="card" style="font-size: 13px; color: var(--muted);">
+    <h2 style="font-size: 15px; color: var(--text);">ℹ️ Como Funciona o Bloqueio por Aparelho?</h2>
+    <ul style="padding-left: 20px; line-height: 1.8;">
+      <li>O cliente baixa o app CertiFi Pro no celular dele. Ao abrir, o app exibe o <b>ID Único do Aparelho</b>.</li>
+      <li>O cliente copia o ID e manda para você no WhatsApp junto com o comprovante do Pix.</li>
+      <li>Você cola o ID nesta página e clica em <b>Gerar Chave</b>.</li>
+      <li>A chave gerada <b>só funciona naquele aparelho específico</b>. Se o cliente passar o APK ou a chave para outra pessoa, o app de outra pessoa terá outro ID e recusará a ativação.</li>
+      <li>Tudo roda 100% offline via matemática criptográfica, sem precisar de internet ou servidor seu!</li>
+    </ul>
+  </div>
+</div>
+
+<div id="toast" class="toast">✔ Copiado com sucesso!</div>
+
+<script>
+"use strict";
+
+const LICENSE_SALT = "CertiFi-Pro-2026-SecLock-MasterSalt#Offline!";
+
+function sha256Sync(ascii) {
+  function rightRotate(value, amount) { return (value >>> amount) | (value << (32 - amount)); }
+  var words = [];
+  var asciiBitLength = ascii.length * 8;
+  for (var i = 0; i < ascii.length; i++) {
+    words[i >> 2] |= (ascii.charCodeAt(i) & 0xff) << (24 - (i % 4) * 8);
+  }
+  words[asciiBitLength >> 5] |= 0x80 << (24 - (asciiBitLength % 32));
+  words[(((asciiBitLength + 64) >> 9) << 4) + 15] = asciiBitLength;
+  var hash = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  var k = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ];
+  for (var i = 0; i < words.length; i += 16) {
+    var w = words.slice(i, i + 16);
+    while (w.length < 16) w.push(0);
+    var oldHash = hash.slice(0);
+    for (var j = 0; j < 64; j++) {
+      var w15 = w[j - 15], w2 = w[j - 2];
+      var a = hash[0], e = hash[4];
+      var s1 = rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25);
+      var ch = (e & hash[5]) ^ ((~e) & hash[6]);
+      var temp1 = (hash[7] + s1 + ch + k[j] + (w[j] = (j < 16) ? (w[j] || 0) : (
+        ((w[j - 16] || 0) +
+        (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) +
+        (w[j - 7] || 0) +
+        (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) | 0
+      ))) | 0;
+      var s0 = rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22);
+      var maj = (a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]);
+      var temp2 = (s0 + maj) | 0;
+      hash = [(temp1 + temp2) | 0, hash[0], hash[1], hash[2], (hash[3] + temp1) | 0, hash[4], hash[5], hash[6]];
+    }
+    for (var j = 0; j < 8; j++) hash[j] = (hash[j] + oldHash[j]) | 0;
+  }
+  var result = '';
+  for (var i = 0; i < 8; i++) {
+    for (var j = 3; j >= 0; j--) {
+      var b = (hash[i] >> (8 * j)) & 255;
+      result += (b < 16 ? '0' : '') + b.toString(16);
+    }
+  }
+  return result;
+}
+
+function computeLicenseKey(deviceId) {
+  if (!deviceId) return "";
+  const norm = String(deviceId).replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (!norm) return "";
+  const hash = sha256Sync(norm + ":" + LICENSE_SALT).toUpperCase();
+  return "CP-" + hash.substring(0, 4) + "-" + hash.substring(4, 8) + "-" + hash.substring(8, 12);
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  setTimeout(() => { t.style.display = "none"; }, 2500);
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast("✔ Copiado para a área de transferência!"));
+  } else {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    showToast("✔ Copiado para a área de transferência!");
+  }
+}
+
+// Histórico local
+function loadHistory() {
+  const list = JSON.parse(localStorage.getItem("certifi_gen_history") || "[]");
+  const tbody = document.getElementById("historyBody");
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color: var(--muted); text-align: center;">Nenhuma chave gerada ainda.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(item => `
+    <tr>
+      <td>${item.date}</td>
+      <td><b>${item.client || "Cliente"}</b></td>
+      <td style="font-family: monospace;">${item.devId}</td>
+      <td style="font-family: monospace; color: var(--success); font-weight: bold;">${item.key}</td>
+      <td>${item.val || "–"}</td>
+    </tr>
+  `).join("");
+}
+
+function saveHistoryItem(item) {
+  const list = JSON.parse(localStorage.getItem("certifi_gen_history") || "[]");
+  list.unshift(item);
+  if (list.length > 50) list.pop();
+  localStorage.setItem("certifi_gen_history", JSON.stringify(list));
+  loadHistory();
+}
+
+document.getElementById("btnGenerate").onclick = () => {
+  const rawId = document.getElementById("inputDevId").value.trim();
+  const client = document.getElementById("inputClientName").value.trim();
+  const val = document.getElementById("inputValue").value.trim();
+
+  if (!rawId) {
+    alert("Por favor, digite ou cole o ID do aparelho do cliente!");
+    return;
+  }
+
+  const key = computeLicenseKey(rawId);
+  document.getElementById("keyDisplay").textContent = key;
+
+  const now = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  const greeting = client ? `Olá ${client}!` : "Olá!";
+  const msg = `${greeting} Segue a sua Chave de Ativação Vitalícia do CertiFi Pro:
+
+📱 ID do seu Aparelho: ${rawId}
+🔑 Chave de Ativação: ${key}
+
+Instruções para Ativação:
+1. Abra o app CertiFi Pro no seu celular
+2. Cole a Chave de Ativação no campo "Cole sua Chave"
+3. Clique no botão "Ativar App"
+
+Pronto! Seu CertiFi Pro está liberado para uso ilimitado e vitalício neste aparelho. 🚀`;
+
+  document.getElementById("msgPreview").value = msg;
+  document.getElementById("resultArea").style.display = "block";
+
+  saveHistoryItem({
+    date: dateStr,
+    client: client,
+    devId: rawId,
+    key: key,
+    val: val
+  });
+
+  showToast("Chave gerada com sucesso!");
+};
+
+document.getElementById("btnCopyKeyOnly").onclick = () => {
+  const key = document.getElementById("keyDisplay").textContent;
+  copyToClipboard(key);
+};
+
+document.getElementById("btnCopyMessage").onclick = () => {
+  const msg = document.getElementById("msgPreview").value;
+  copyToClipboard(msg);
+};
+
+document.getElementById("btnClearHistory").onclick = () => {
+  if (confirm("Deseja realmente limpar todo o histórico de chaves geradas?")) {
+    localStorage.removeItem("certifi_gen_history");
+    loadHistory();
+  }
+};
+
+loadHistory();
+</script>
+</body>
+</html>

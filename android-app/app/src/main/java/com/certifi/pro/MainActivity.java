@@ -178,8 +178,20 @@ public class MainActivity extends Activity {
                 o.put("model", Build.MANUFACTURER + " " + Build.MODEL);
                 o.put("support5", w != null && w.is5GHzBandSupported());
                 o.put("support6", Build.VERSION.SDK_INT >= 30 && w != null && w.is6GHzBandSupported());
+                String devId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+                o.put("deviceId", devId != null ? devId.toUpperCase(Locale.ROOT) : "OFFLINE-DEV");
             } catch (Exception e) { safePut(o, "error", e.toString()); }
             return o.toString();
+        }
+
+        @JavascriptInterface
+        public String getDeviceId() {
+            try {
+                String id = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+                return id != null ? id.toUpperCase(Locale.ROOT) : "CERTIFI-DEVICE";
+            } catch (Exception e) {
+                return "CERTIFI-DEVICE";
+            }
         }
 
         @JavascriptInterface

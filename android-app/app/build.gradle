@@ -14,7 +14,7 @@ android {
         minSdk 24
         targetSdk 34
         versionCode 100 + buildNumber
-        versionName "1.1." + buildNumber
+        versionName "1.2." + buildNumber
     }
 
     // Chave FIXA: todo APK gerado é assinado igual, então instalar por cima de uma versão anterior funciona

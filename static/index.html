@@ -357,6 +357,36 @@
   </section>
 </main>
 
+<!-- MODAL DE ATIVAÇÃO / LICENÇA OFFLINE -->
+<div id="licenseModal" class="loading hidden" style="background: rgba(5,8,18,0.92); z-index: 9999; padding: 20px;">
+  <div class="card" style="max-width: 460px; width: 100%; border: 2px solid var(--accent); box-shadow: 0 10px 40px rgba(0,0,0,0.8); background: #121a2e;">
+    <div class="row between">
+      <h3 style="color:#60a5fa; margin: 0;">🔐 Ativação do CertiFi Pro</h3>
+      <span class="pill" style="color:var(--warn); border-color:var(--warn);">Licença Individual</span>
+    </div>
+    <p class="muted small" style="margin: 10px 0 16px;">
+      Este aplicativo é licenciado e bloqueado exclusivamente para este dispositivo. Envie o seu ID abaixo para obter a Chave de Ativação vitalícia:
+    </p>
+
+    <div style="background: #090e1a; padding: 12px; border-radius: 8px; border: 1px dashed var(--line); margin-bottom: 14px; text-align: center;">
+      <small class="muted" style="display:block; text-transform: uppercase; font-size: 11px;">ID Único deste Aparelho</small>
+      <b id="displayDeviceId" style="font-size: 18px; color: #22c55e; letter-spacing: 1px; display: block; margin-top: 4px; word-break: break-all;">CARREGANDO...</b>
+      <button id="btnCopyDevId" class="mt" style="font-size: 12px; padding: 5px 12px; margin-top: 8px;">📋 Copiar ID do Aparelho</button>
+    </div>
+
+    <div class="row gap mt">
+      <input id="inputLicenseKey" placeholder="Cole sua Chave: CP-XXXX-XXXX-XXXX" style="font-size: 14px; text-transform: uppercase;">
+      <button id="btnActivateLicense" class="primary" style="white-space: nowrap;">Ativar App</button>
+    </div>
+    <div id="licenseError" style="color: #ef4444; font-size: 12px; margin-top: 8px; display: none; font-weight: bold; text-align: center;"></div>
+
+    <div style="margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; font-size: 12px; color: var(--muted); text-align: center;">
+      <span>Dúvidas ou adquirir licença?</span><br>
+      <a id="btnWhatsappSupport" href="#" target="_blank" style="color:#38bdf8; font-weight: bold; display: inline-block; margin-top: 4px;">💬 Falar no WhatsApp com o Suporte</a>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast hidden"></div>
 <div id="loading" class="loading hidden"><div class="spinner"></div><span id="loadingText">Analisando…</span></div>
 

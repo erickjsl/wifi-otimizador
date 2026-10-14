@@ -3,6 +3,180 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 let DATA = null, BAND = "2.4", SORT = { k: "rssi", dir: -1 };
 
+// ------------------------------------------------------------------ Sistema de Licenciamento & Trava de Dispositivo Offline
+const LICENSE_SALT = "CertiFi-Pro-2026-SecLock-MasterSalt#Offline!";
+
+function sha256Sync(ascii) {
+  function rightRotate(value, amount) { return (value >>> amount) | (value << (32 - amount)); }
+  var words = [];
+  var asciiBitLength = ascii.length * 8;
+  for (var i = 0; i < ascii.length; i++) {
+    words[i >> 2] |= (ascii.charCodeAt(i) & 0xff) << (24 - (i % 4) * 8);
+  }
+  words[asciiBitLength >> 5] |= 0x80 << (24 - (asciiBitLength % 32));
+  words[(((asciiBitLength + 64) >> 9) << 4) + 15] = asciiBitLength;
+  var hash = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  var k = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ];
+  for (var i = 0; i < words.length; i += 16) {
+    var w = words.slice(i, i + 16);
+    while (w.length < 16) w.push(0);
+    var oldHash = hash.slice(0);
+    for (var j = 0; j < 64; j++) {
+      var w15 = w[j - 15], w2 = w[j - 2];
+      var a = hash[0], e = hash[4];
+      var s1 = rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25);
+      var ch = (e & hash[5]) ^ ((~e) & hash[6]);
+      var temp1 = (hash[7] + s1 + ch + k[j] + (w[j] = (j < 16) ? (w[j] || 0) : (
+        ((w[j - 16] || 0) +
+        (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) +
+        (w[j - 7] || 0) +
+        (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) | 0
+      ))) | 0;
+      var s0 = rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22);
+      var maj = (a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]);
+      var temp2 = (s0 + maj) | 0;
+      hash = [(temp1 + temp2) | 0, hash[0], hash[1], hash[2], (hash[3] + temp1) | 0, hash[4], hash[5], hash[6]];
+    }
+    for (var j = 0; j < 8; j++) hash[j] = (hash[j] + oldHash[j]) | 0;
+  }
+  var result = '';
+  for (var i = 0; i < 8; i++) {
+    for (var j = 3; j >= 0; j--) {
+      var b = (hash[i] >> (8 * j)) & 255;
+      result += (b < 16 ? '0' : '') + b.toString(16);
+    }
+  }
+  return result;
+}
+
+function getDeviceId() {
+  if (window.AndroidWifi && typeof window.AndroidWifi.getDeviceId === "function") {
+    try {
+      const id = window.AndroidWifi.getDeviceId();
+      if (id && id.trim()) return id.trim().toUpperCase();
+    } catch (e) {}
+  }
+  let localId = localStorage.getItem("certifi_device_id");
+  if (!localId) {
+    try {
+      const arr = new Uint8Array(8);
+      (window.crypto || window.msCrypto).getRandomValues(arr);
+      localId = Array.from(arr).map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+    } catch (e) {
+      localId = "DEV" + Math.random().toString(36).substring(2, 12).toUpperCase();
+    }
+    localStorage.setItem("certifi_device_id", localId);
+  }
+  return localId;
+}
+
+function computeLicenseKey(deviceId) {
+  if (!deviceId) return "";
+  const norm = String(deviceId).replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (!norm) return "";
+  const hash = sha256Sync(norm + ":" + LICENSE_SALT).toUpperCase();
+  return "CP-" + hash.substring(0, 4) + "-" + hash.substring(4, 8) + "-" + hash.substring(8, 12);
+}
+
+function isAppLicensed() {
+  const devId = getDeviceId();
+  const expectedKey = computeLicenseKey(devId);
+  const storedKey = (localStorage.getItem("certifi_license_key") || "").trim().toUpperCase();
+  return !!(storedKey && storedKey === expectedKey);
+}
+
+function fallbackCopyText(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand("copy"); } catch (e) {}
+  document.body.removeChild(ta);
+}
+
+function checkLicenseGate() {
+  const modal = $("#licenseModal");
+  if (!modal) return true;
+
+  if (isAppLicensed()) {
+    modal.classList.add("hidden");
+    return true;
+  }
+
+  // Não licenciado: exibe modal bloqueante e prepara UI
+  const devId = getDeviceId();
+  const devIdEl = $("#displayDeviceId");
+  if (devIdEl) devIdEl.textContent = devId;
+
+  const btnCopy = $("#btnCopyDevId");
+  if (btnCopy) {
+    btnCopy.onclick = () => {
+      const doSuccess = () => {
+        btnCopy.textContent = "✔ ID Copiado!";
+        setTimeout(() => { btnCopy.textContent = "📋 Copiar ID do Aparelho"; }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(devId).then(doSuccess).catch(() => {
+          fallbackCopyText(devId);
+          doSuccess();
+        });
+      } else {
+        fallbackCopyText(devId);
+        doSuccess();
+      }
+    };
+  }
+
+  const waBtn = $("#btnWhatsappSupport");
+  if (waBtn) {
+    const msg = encodeURIComponent(`Olá! Gostaria de ativar meu aplicativo CertiFi Pro.\n\nMeu ID de aparelho é:\n${devId}`);
+    waBtn.href = `https://wa.me/?text=${msg}`;
+  }
+
+  const btnActivate = $("#btnActivateLicense");
+  const inputKey = $("#inputLicenseKey");
+  const errDiv = $("#licenseError");
+
+  if (btnActivate && inputKey) {
+    btnActivate.onclick = () => {
+      const enteredKey = inputKey.value.trim().toUpperCase();
+      const expectedKey = computeLicenseKey(devId);
+      if (enteredKey && enteredKey === expectedKey) {
+        localStorage.setItem("certifi_license_key", enteredKey);
+        if (errDiv) errDiv.style.display = "none";
+        modal.classList.add("hidden");
+        toast("🎉 Licença vitalícia ativada com sucesso!");
+        scan();
+      } else {
+        if (errDiv) {
+          errDiv.textContent = "❌ Chave inválida para este aparelho! Verifique os dígitos.";
+          errDiv.style.display = "block";
+        } else {
+          alert("❌ Chave inválida para este aparelho!\n\nVerifique se digitou corretamente ou solicite a chave para o ID: " + devId);
+        }
+      }
+    };
+    inputKey.onkeyup = (e) => {
+      if (e.key === "Enter") btnActivate.click();
+    };
+  }
+
+  modal.classList.remove("hidden");
+  return false;
+}
+
 // ------------------------------------------------------------------ API
 function getApiBase() {
   let saved = localStorage.getItem("server_ip");
@@ -20,6 +194,10 @@ function getApiBase() {
 }
 
 async function api(path, opts = {}) {
+  if (!isAppLicensed()) {
+    checkLicenseGate();
+    throw new Error("Aplicativo bloqueado: licença individual não ativada.");
+  }
   // Dentro do APK: mede direto no celular, sem PC
   if (window.NativeAPI && window.NativeAPI.active()) return window.NativeAPI.handle(path, opts);
   const base = getApiBase();
@@ -725,8 +903,12 @@ document.addEventListener("DOMContentLoaded", () => {
 if (window.NativeAPI && window.NativeAPI.active()) {
   const bar = $("#serverConfigBar");
   if (bar) bar.innerHTML = `<span>📱 <b>Medindo direto neste celular</b> — não precisa de computador</span>`;
-  window.onNativePermission = () => scan();
+  window.onNativePermission = () => {
+    if (checkLicenseGate()) scan();
+  };
 }
 
 // ------------------------------------------------------------------ Início
-scan();
+if (checkLicenseGate()) {
+  scan();
+}
