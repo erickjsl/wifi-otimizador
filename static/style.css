@@ -160,3 +160,20 @@ tr.mine td:first-child { box-shadow: inset 3px 0 0 var(--mine); }
   #certPrintArea { padding: 15px !important; }
   #certPrintArea > div:nth-child(2) { grid-template-columns: 1fr !important; }
 }
+
+/* Regras de Impressão / PDF */
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  header, nav, #serverConfigBar, .header-top, .tab:not(#tab-certify), #tab-certify > .grid, #btnPrintCert, #toast, #loading {
+    display: none !important;
+  }
+  #tab-certify, #certPrintArea {
+    display: block !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+}

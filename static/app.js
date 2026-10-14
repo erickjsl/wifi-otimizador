@@ -632,7 +632,12 @@ function renderCertificate(cert) {
 }
 
 $("#btnPrintCert")?.addEventListener("click", () => {
-  window.print();
+  if (window.AndroidWifi && typeof window.AndroidWifi.printDocument === "function") {
+    const certCode = $("#certCode") ? $("#certCode").textContent : "Certificado_WiFi";
+    window.AndroidWifi.printDocument(certCode || "Certificado_WiFi");
+  } else {
+    window.print();
+  }
 });
 
 // ------------------------------------------------------------------ Server IP UI & Auto Detect

@@ -368,6 +368,28 @@ public class MainActivity extends Activity {
             });
         }
 
+        @JavascriptInterface
+        public void printDocument(String jobName) {
+            runOnUiThread(() -> {
+                try {
+                    if (webView == null) return;
+                    android.print.PrintManager pm = (android.print.PrintManager) getSystemService(Context.PRINT_SERVICE);
+                    if (pm != null) {
+                        String name = (jobName != null && !jobName.isEmpty()) ? jobName : "Certificado_WiFi";
+                        android.print.PrintDocumentAdapter adapter;
+                        if (Build.VERSION.SDK_INT >= 21) {
+                            adapter = webView.createPrintDocumentAdapter(name);
+                        } else {
+                            adapter = webView.createPrintDocumentAdapter();
+                        }
+                        pm.print(name, adapter, new android.print.PrintAttributes.Builder().build());
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("CertiFiWeb", "Erro ao acionar impressora: " + e.getMessage());
+                }
+            });
+        }
+
         private int widthMhz(int cw) {
             switch (cw) {
                 case 1: return 40;

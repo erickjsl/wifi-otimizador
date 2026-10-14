@@ -304,20 +304,46 @@
 
   async function doSpeed() {
     const lat = ping("1.1.1.1", 4);
-    // Download: lê o fluxo por até ~8 s
-    let bytes = 0; const t0 = performance.now();
-    const ctl = new AbortController(); const stopAt = t0 + 8000;
-    try {
-      const r = await fetch("https://speed.cloudflare.com/__down?bytes=100000000", { signal: ctl.signal, cache: "no-store" });
-      const reader = r.body.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        bytes += value.length;
-        if (performance.now() > stopAt) { ctl.abort(); break; }
+    // Download: mede transferência real lendo blocos sucessivos
+    let bytes = 0;
+    const t0 = performance.now();
+    const urls = [
+      "https://speed.cloudflare.com/__down?bytes=25000000",
+      "https://speed.cloudflare.com/__down?bytes=10000000",
+      "https://cp.cloudflare.com/__down?bytes=10000000"
+    ];
+
+    for (const url of urls) {
+      if (bytes > 5000000 || performance.now() - t0 > 6000) break;
+      try {
+        const ctl = new AbortController();
+        const tid = setTimeout(() => ctl.abort(), 7000);
+        const r = await fetch(url, { signal: ctl.signal, cache: "no-store" });
+        clearTimeout(tid);
+        if (r.ok && r.body && r.body.getReader) {
+          const reader = r.body.getReader();
+          const stopAt = performance.now() + 6000;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            bytes += value.byteLength || value.length || 0;
+            if (performance.now() > stopAt) {
+              try { await reader.cancel(); } catch (ignored) {}
+              break;
+            }
+          }
+        } else if (r.ok) {
+          const buf = await r.arrayBuffer();
+          bytes += buf.byteLength;
+        }
+      } catch (errDl) {
+        console.warn("doSpeed dl chunk err:", errDl);
       }
-    } catch (e) { if (!bytes) throw new Error("Sem acesso à internet para o teste de velocidade."); }
-    const dl = bytes * 8 / ((performance.now() - t0) / 1000) / 1e6;
+    }
+
+    const elapsedDl = Math.max(0.5, (performance.now() - t0) / 1000);
+    let dl = bytes ? (bytes * 8 / elapsedDl / 1e6) : 0;
+    if (dl <= 0 && bytes > 0) dl = 1.0;
     // Upload: envia blocos de 2 MB por até ~6 s
     const chunk = new Uint8Array(2 * 1024 * 1024); let up = 0; const u0 = performance.now();
     try {
